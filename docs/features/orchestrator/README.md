@@ -110,6 +110,14 @@ this plan as `.migration-backup/<path>` on that branch. The Replit workspace has
 no headless runner and no database package, so the backend described here cannot be
 built there (decision D17).
 
+The Replit preview also has a Hierarchy page (route `/orchestrator/hierarchy`) that runs on
+sample data and its own copy of the rules, `hierarchy-rules.ts`, with unit tests and a browser
+test. It is a UI preview, not the implementation: [hierarchy.md](hierarchy.md) is the
+specification, and the preview differs from it in three ways that are expected. Its escalation
+path lists the whole chain instead of skipping managers that are not running, it does not check
+stored data for loops or two managers, and it keeps its levels as plain numbers. The port to
+`packages/agent-orchestrator` should start from the reference code in `hierarchy.md`.
+
 ## Glossary
 
 | Term | Meaning |
