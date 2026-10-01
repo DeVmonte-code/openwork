@@ -46,9 +46,10 @@ This is how the current chat uses the Orchestrator.
 
 | Capability | Does | Needs |
 | --- | --- | --- |
-| `orchestrator:list_agents` | The running agents: name, slug, the requests each handles, state | `orchestrator.view` |
+| `orchestrator:list_agents` | The running agents that are visible to members: name, slug, the requests each handles, state | `orchestrator.view` |
 | `orchestrator:submit_task` | Creates a root task for an agent or a request type. Takes an `idempotencyKey` and an optional `origin` label | `orchestrator.submit` |
-| `orchestrator:get_task` | State, result, and a short timeline. Own submissions, or any task with `orchestrator.view` | `orchestrator.view` |
+| `orchestrator:get_task` | State, result, and a short timeline. Own submissions, or any task with `orchestrator.view`. An open question comes back with its options and a digest | `orchestrator.view` |
+| `orchestrator:answer` | Relays the person's answer to a question the Orchestrator put to them | The member the question was put to |
 
 Rules:
 
@@ -59,11 +60,11 @@ Rules:
   and it stays off. Exposing every route would hand a chat approvals, configuration, the
   hierarchy and the kill switch. Only the three capabilities above are exposed
   ([api.md](api.md)).
-- **What a chat cannot do.** Approve, decline, answer a question on the person's behalf,
-  edit an agent or change the hierarchy. Those do not exist as capabilities, so asking for
-  them returns `unknown_capability`. If a task waits for a person, the chat tells them, and
-  the card opens the consent card in the Orchestrator ([ui.md](ui.md)). This is the same
-  rule as the interface's agent-readable control: no command to approve.
+- **What a chat cannot do.** Approve, decline, edit an agent or change the hierarchy. Those
+  do not exist as capabilities, so asking for them returns `unknown_capability`. If a task
+  waits for an approval, the chat tells the person, and the card opens the consent card in the
+  Orchestrator ([ui.md](ui.md)). This is the same rule as the interface's agent-readable
+  control: no command to approve.
 - **MCP can enqueue, never run.** The gateway creates work. It never gets runner credentials
   or touches a running attempt, matching the rule for the desktop runner token.
 - **A task from a chat is untrusted input.** A chat may have read a web page, so the root
@@ -82,6 +83,47 @@ Rules:
 - **Retries.** If the caller sends no `idempotencyKey`, one is derived from the member, the
   chat, and a digest of the payload within a five-minute window, so a retried tool call
   does not start a second process.
+
+### Which agents a chat can see
+
+Only agents the owner made visible to members. This uses the agent's `a2a.exposure`
+([agent-config.md](agent-config.md)):
+
+| `exposure` | Listed and usable from a chat or MCP client | Served over A2A |
+| --- | --- | --- |
+| `internal` (the default) | No. Reached by other agents and from the Orchestrator itself | No |
+| `members` | Yes | No |
+| `organization` | Yes | Yes, to authenticated organization principals |
+
+Submitting to an agent that is not visible returns `not_found`, so the answer does not
+reveal that it exists. An agent made visible needs a description and at least one skill
+(the validator enforces it), because those are what the chat shows. In the samples, the
+Research agent is `members`, so a chat can hand it a question.
+
+### Relaying an answer
+
+When an agent asks the person a question, the question appears in "Needs you" as before. If
+the person is in a chat, the chat can pass their answer on. This is allowed, and an
+organization can switch it off with the policy `chatAnswers`. The risk is a chat answering
+for the person without asking, so the capability is narrow:
+
+1. The chat reads the task with `orchestrator:get_task`. The open question comes back with
+   its `requestMessageId`, its options and a `questionDigest`.
+2. The chat asks the person, and calls `orchestrator:answer` with the digest and the answer.
+3. The service accepts it only if every check passes (`checkRelayedAnswer`, which has
+   its own checks):
+   - the caller is the member the question was put to, and nobody else, not an
+     administrator and not a manager agent. Others answer in the tab;
+   - the question is for a person, not for a delegator or a manager, and it is still open;
+   - the digest matches the exact question and options, so a chat that never read the
+     question cannot answer it;
+   - if the question offered options, the answer is one of them.
+4. The answer is recorded with `answeredVia: "chat"` (or `mcp_client`). The task is tainted
+   from then on, like any text that came out of a chat. The timeline shows "Answered from a
+   chat" with the words, and the ledger has `task.answered_via_chat`.
+
+An approval is a different object and a different path. It cannot be relayed, whatever the
+chat says.
 
 The card is a standard MCP Apps card (the `connection-action-app.ts` pattern): task title, state,
 last activity, and **Open in Orchestrator**, which goes to `/orchestrator/tasks/{taskId}`.
@@ -152,14 +194,19 @@ These are also in the README.
 - **D21.** The Orchestrator stays organization-scoped. A workspace or a chat is a reference:
   an origin on a task, an optional binding on an agent. It is never a parent.
 - **D22.** Chats reach the Orchestrator through gateway capabilities in the remote-session
-  pattern. A chat can list agents, submit a task and read it. It cannot approve, answer,
-  configure or change the hierarchy.
+  pattern. A chat can list the agents visible to members, submit a task, read it and relay
+  the person's answer to a question put to them. It cannot approve, configure or change the
+  hierarchy.
 - **D23.** A task that came from a chat, an MCP client, an event or an outside caller starts
   tainted. An origin is a label, not authority, and carries ids only.
+- **D24.** An agent is visible to chats and MCP clients only when its `a2a.exposure` is
+  `members` or `organization`.
 
 ## How it is tested
 
-Group W in [test-plan.md](test-plan.md), and journey J7.
+Group W in [test-plan.md](test-plan.md), and journey J7. The rules for the origin and for relayed
+answers are code in [messaging.md](messaging.md), with their own checks; a deliberate break of
+each rule was caught.
 
 | Id | Scenario | Expected |
 | --- | --- | --- |
@@ -167,17 +214,28 @@ Group W in [test-plan.md](test-plan.md), and journey J7.
 | W2 | Taint by origin | A chat, an MCP client, an event and an outside caller taint; the Orchestrator itself and a schedule do not |
 | W3 | Submit from a chat | One task with the origin; the same call retried creates no second task |
 | W4 | Identity | The member comes from the token; another member's task is a 404 |
-| W5 | What a chat cannot do | Approve, decline, answer and configure return `unknown_capability` |
+| W5 | What a chat cannot do | Approve, decline, edit an agent and change the hierarchy return `unknown_capability` |
 | W6 | The scope | Without the scope or with the feature off, the capabilities are not listed |
 | W7 | Discuss in chat | The composer opens with the draft unsent; a member without `view_content` gets title and state only |
 | W8 | Back to chat | Hidden when the workspace is not on this device or the member differs |
+| W9 | No loop | The Orchestrator never sends a prompt into a chat; submissions beyond the per-member limit get `rate_limited` |
+| W10 | A relayed answer is accepted | The person asked, with the question's digest, answers once; the task continues, the timeline says "Answered from a chat", the ledger has `task.answered_via_chat` |
+| W11 | A relayed answer is refused | Another member, a question for an agent or manager, an answered or expired question, a wrong digest, an answer outside the offered options: each is refused with its reason and nothing is recorded as answered |
+| W12 | Taint after a relay | A task answered through a chat is tainted afterwards: an external write needs approval, an irreversible one is denied |
+| W13 | The policy | With `chatAnswers` off, `orchestrator:answer` is not listed and a call returns `unknown_capability` |
+| W14 | Visibility | `orchestrator:list_agents` shows only `members` and `organization` agents; submitting to an `internal` agent returns `not_found`; the tab still reaches every agent |
 
-## Questions for you
+## Decided
 
-1. Should a chat be able to relay an answer to an agent's question? The plan says no for now,
-   because an agent could answer for the person without asking.
-2. Which workspace should "Discuss in chat" default to?
-3. Should every member's chat list every agent, or only agents that list members in their
-   `a2a.exposure`?
-4. When cloud-bound and desktop-bound agents arrive, does the agent's owner or the
-   organization own the binding?
+Your answers, 2026-10-02:
+
+- A chat may relay a person's answer, with the limits above.
+- "Discuss in chat" defaults to the workspace that started the task if it is on this device,
+  otherwise the workspace in use.
+- A chat sees only the agents made visible to members.
+- The Replit preview gets "Discuss in chat" and the origin line.
+
+## Still open
+
+When cloud-bound and desktop-bound agents arrive, does the agent's owner or the organization
+own the workspace binding?

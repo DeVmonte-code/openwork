@@ -114,6 +114,67 @@ export function originTaintsTask(origin: Origin): boolean {
   return origin.kind !== "member_ui" && origin.kind !== "schedule"
 }
 
+// --- answering a question from a chat -------------------------------------------
+
+/** Where an answer was typed. A chat and an MCP client can relay a person's answer. They cannot approve. */
+export const answeredViaSchema = z.enum(["orchestrator", "agent", "chat", "mcp_client"])
+export type AnsweredVia = z.infer<typeof answeredViaSchema>
+
+/** An answer relayed through a chat is untrusted input, like any text that came out of one. */
+export function answerTaintsTask(via: AnsweredVia): boolean {
+  return via === "chat" || via === "mcp_client"
+}
+
+/** What a chat sends to relay a person's answer. The digest proves it was given the exact question. */
+export const relayedAnswerSchema = z.strictObject({
+  taskId: idSchema,
+  requestMessageId: idSchema,
+  /** sha256 of the question text and its options, as returned when the chat read the task. */
+  questionDigest: sha256Schema,
+  answer: z.string().min(1).max(2_000),
+  idempotencyKey: z.string().min(8).max(128),
+})
+export type RelayedAnswer = z.infer<typeof relayedAnswerSchema>
+
+/** The stored question, as the service sees it when a relay arrives. */
+export type OpenQuestion = {
+  taskId: string
+  requestMessageId: string
+  digest: string
+  audience: "delegator" | "manager" | "human"
+  /** The member the question was put to. */
+  askedMemberId: string | null
+  options: readonly string[] | undefined
+  state: "open" | "answered" | "expired"
+}
+
+export type RelayRefusal =
+  | "wrong_task"
+  | "not_a_question_for_a_person"
+  | "not_the_person_asked"
+  | "not_open"
+  | "digest_mismatch"
+  | "not_an_option"
+
+/**
+ * Whether a relayed answer is accepted. Only the member the question was put to can relay it, only
+ * while it is open, and only with the digest of the question they were shown. If the question offered
+ * options, the answer must be one of them. Approvals are a separate path and cannot be relayed.
+ */
+export function checkRelayedAnswer(
+  question: OpenQuestion,
+  relayed: RelayedAnswer,
+  callerMemberId: string,
+): { ok: true } | { ok: false; reason: RelayRefusal } {
+  if (relayed.taskId !== question.taskId || relayed.requestMessageId !== question.requestMessageId) return { ok: false, reason: "wrong_task" }
+  if (question.audience !== "human") return { ok: false, reason: "not_a_question_for_a_person" }
+  if (question.askedMemberId === null || question.askedMemberId !== callerMemberId) return { ok: false, reason: "not_the_person_asked" }
+  if (question.state !== "open") return { ok: false, reason: "not_open" }
+  if (relayed.questionDigest !== question.digest) return { ok: false, reason: "digest_mismatch" }
+  if (question.options !== undefined && question.options.length > 0 && !question.options.includes(relayed.answer)) return { ok: false, reason: "not_an_option" }
+  return { ok: true }
+}
+
 // --- message bodies, one per type --------------------------------------------
 
 const delegateBody = z.strictObject({
@@ -211,7 +272,10 @@ export const messageEnvelopeSchema = z.discriminatedUnion("type", [
   envelope("task.reject", bodies["task.reject"]),
   envelope("task.status", bodies["task.status"]),
   envelope("task.clarify.request", bodies["task.clarify.request"]),
-  envelope("task.clarify.response", bodies["task.clarify.response"].extend({ answeredBy: actorSchema })),
+  envelope("task.clarify.response", bodies["task.clarify.response"].extend({
+    answeredBy: actorSchema,
+    answeredVia: answeredViaSchema.default("orchestrator"),
+  })),
   envelope("task.complete", bodies["task.complete"]),
   envelope("task.fail", bodies["task.fail"]),
   envelope("approval.request", z.strictObject({ approvalId: idSchema })),

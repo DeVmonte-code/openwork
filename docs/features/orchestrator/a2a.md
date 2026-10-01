@@ -93,9 +93,19 @@ Rules that follow from the specification and from this plan:
 
 ## Agent Card from configuration
 
-The configuration's `a2a` block holds only what cannot be derived: how far the agent
-is reachable (`exposure`) and the requests it handles (`skills`). Everything else on
-the card comes from fields the agent already has.
+The configuration's `a2a` block holds only what cannot be derived: who can find and use the
+agent (`exposure`) and the requests it handles (`skills`). Everything else on the card comes
+from fields the agent already has.
+
+| `exposure` | Who sees and can use the agent | Served over A2A |
+| --- | --- | --- |
+| `internal` | Other agents the orchestrator runs, and people using the Orchestrator itself | No |
+| `members` | Also members' chats and MCP clients, which can list it, submit to it and read the task ([workspaces-and-chat.md](workspaces-and-chat.md)) | No |
+| `organization` | Everything `members` allows, and authenticated organization principals over A2A | Yes |
+
+An agent above `internal` needs a description and at least one skill, because both are what
+people are shown. The pilot uses `internal` and `members`; `organization` stays off until the
+A2A security items below are settled.
 
 | Card field | Comes from |
 | --- | --- |

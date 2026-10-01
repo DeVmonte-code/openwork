@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "identity": {"slug": "research", "displayName": "Research", "labels": ["sample"]},
+  "identity": {"slug": "research", "displayName": "Research", "description": "Gather the facts needed to answer one request", "labels": ["sample"]},
   "role": {
     "kind": "worker",
     "responsibilities": ["Gather the facts needed to answer one request"],
@@ -23,7 +23,7 @@
     "orchestrator": ["report_status", "ask_clarification", "delegate_task", "memory_read"]
   },
   "a2a": {
-    "exposure": "internal",
+    "exposure": "members",
     "skills": [
       {
         "id": "research-request",

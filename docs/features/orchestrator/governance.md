@@ -247,7 +247,7 @@ one breaks it.
 | --- | --- |
 | Agents | `agent.created`, `agent.started`, `agent.paused`, `agent.resumed`, `agent.restarted`, `agent.stopped`, `agent.quarantined`, `agent.retired`, `agent.owner_changed` |
 | Configuration | `agent_config.drafted`, `agent_config.validated`, `agent_config.activated`, `agent_config.rolled_back` |
-| Tasks | `task.created_by_member`, `task.dead_lettered`, `task.requeued`, `task.discarded`, `task.cancelled_by_member` |
+| Tasks | `task.created_by_member`, `task.dead_lettered`, `task.requeued`, `task.discarded`, `task.cancelled_by_member`, `task.answered_by_member`, `task.answered_via_chat` |
 | Effects | `effect.executed`, `effect.denied`, `effect.unknown_resolved` |
 | Approvals | `approval.requested`, `approval.decided`, `approval.expired`, `approval.withdrawn` |
 | Hierarchy | `hierarchy.relationship_created`, `hierarchy.relationship_changed`, `hierarchy.relationship_ended`, `hierarchy.policy_changed`, `hierarchy.manager_action` (a manager stopping an action, overriding a decision or reassigning work) |
@@ -329,11 +329,11 @@ a default; the organization's own is an open question.
 One row per organization, with a `revision` like `audit_policy`, edited only by
 `orchestrator.admin` and ledgered:
 
-`enabled`, `rootAgentId`, `maxSpanOfControl`, `spanEnforcement` (`flag` or `block`), `maxHops`, `maxTasksPerProcess`, `maxOpenProcesses`, `processDeadlineMs`,
+`enabled`, `chatAnswers` (`on` by default: whether a chat or MCP client may relay a person's answer to a question), `rootAgentId`, `maxSpanOfControl`, `spanEnforcement` (`flag` or `block`), `maxHops`, `maxTasksPerProcess`, `maxOpenProcesses`, `processDeadlineMs`,
 `processCostMicroUsd`, `minIntervalMs`, `maxConcurrencyPerAgent`, `enabledTargets`,
 `allowIrreversible`, `requireSecondActivator`, `memberSubmit`,
 `autoCommitTrustedNamespaces`, `messageBodyRetentionDays`, `providerClearance`,
-`tierOverrides`, `remoteAgents` (allow list, allowed skills, data class cap), `a2aExposure` (the widest exposure any
+`tierOverrides`, `remoteAgents` (allow list, allowed skills, data class cap), `a2aExposure` (the widest exposure, `internal`, `members` or `organization`, that any
 agent may be given), `effectVerifiers` (per capability: a read-only capability, an
 argument mapping and a success test, used to settle unknown effects), `costCaps`
 (day, month), and the kill switch state.
@@ -359,4 +359,4 @@ argument mapping and a success test, used to settle unknown effects), `costCaps`
 | T15 | Injection through another agent's output | A remote agent returns text that tells ours to ignore its rules | Output is data, taints the task, is schema-checked where a skill defines a result, and approvals still show the exact action |
 | T16 | Authority laundering through a manager agent | A hostile message convinces a manager agent to approve a send, or to stop its report's safety check | A manager agent never satisfies an approval for an external write or an irreversible action (D19); its powers act on decisions and work, never on configuration, tools or budgets; every manager action is a ledger entry naming both agents |
 | T17 | Rewiring the hierarchy to gain authority | An editor makes a compromised agent the manager of a sender, or removes a manager to avoid oversight | Hierarchy changes need `orchestrator.activate` and are ledgered with before and after values; agents can only recommend; cycle, second-manager and unknown-agent changes are refused; an agent with no manager appears in the exceptions report |
-| T18 | A chat used as a way around the interface | A hostile web page convinces a chat's agent to approve, answer or reconfigure through the gateway | Those capabilities do not exist on the gateway (D22); a task from a chat starts tainted; the origin is a label and never authorizes; submissions are rate-limited per member |
+| T18 | A chat used as a way around the interface | A hostile web page convinces a chat's agent to approve or reconfigure through the gateway, or to answer an agent's question with made-up words | Approving, declining, editing and the hierarchy have no capability on the gateway (D22). A relayed answer is limited to the person the question was put to, to an open question, to the exact question they were shown (digest) and to the offered options; it taints the task, is shown in the timeline as "Answered from a chat" and is ledgered; an organization can switch it off (`chatAnswers`). A task from a chat starts tainted; the origin is a label and never authorizes; submissions are rate-limited per member |

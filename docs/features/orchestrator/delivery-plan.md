@@ -127,7 +127,7 @@ green as specs.
   entry, control registrations, `en` strings.
 - The agent builder described in [ui.md](ui.md) (Configure and Preview, requests it
   handles, example requests) and `SubscribeToTask` over server-sent events.
-- The `orchestrator:*` capability source and its card ([workspaces-and-chat.md](workspaces-and-chat.md)), behind the `orchestrator` scope, in the remote-session pattern; **Discuss in chat** and **Open chat** in the interface.
+- The `orchestrator:*` capability source (list agents, submit, read, relay an answer) and its card ([workspaces-and-chat.md](workspaces-and-chat.md)), behind the `orchestrator` scope, in the remote-session pattern; **Discuss in chat** and **Open chat** in the interface.
 - The Hierarchy page ([ui.md](ui.md)): tree, both-direction panel, the four report views,
   the Change manager dialog with live validation, and the `hierarchy` stream event.
 - Rollups, metrics, logs, traces, the alert rules, the Den dashboard monitor and
@@ -137,7 +137,7 @@ green as specs.
   in the style of `den-dev-up.sh`, the small mock MCP servers the sample needs,
   and a short local setup and backup guide.
 
-**Exit:** O1 to O5, W3 to W9 pass; J1, J6 and J7 green; the screenshot set in [ui.md](ui.md) attached
+**Exit:** O1 to O5, W3 to W14 pass; J1, J6 and J7 green; the screenshot set in [ui.md](ui.md) attached
 to the pull requests; `.warden/skills/design-spec-review` run locally.
 
 ### M7 Resilience, security, scale
@@ -237,7 +237,7 @@ default that turns out wrong changes the named document.
 | 10 | A2A details ([a2a.md](a2a.md), "Open items") | HTTP+JSON binding, internal exposure only, no remote agents in the pilot | Binding confirmed by an interop test, the extension namespace, whether cards may be shared outside the organization, and where card signing keys live |
 | 11 | Which tree the code is built in (D17) | The original layout; the Replit workspace stays a preview | Confirmation that the fork's `dev` should keep the Replit layout, or return to the original one |
 | 12 | Hierarchy details ([hierarchy.md](hierarchy.md), "Assumptions to confirm") | One root; one manager per agent; five levels with the powers and reliances in that page; a span limit of 7, flagged not blocked; "active" means not draft or retired; escalation level read as an impact level; "reassign" read as moving work, with moving the agent a person's change; existing ids and slugs, not `AG-001` codes | Confirmation of each, above all the span limit, the powers at each control degree, and whether a display code is wanted |
-| 13 | Workspaces and chats ([workspaces-and-chat.md](workspaces-and-chat.md), "Questions for you") | Chats can list agents, submit and read, never approve or answer; "Discuss in chat" defaults to the workspace that started the task if it is on this device; agents bound to a workspace come after the pilot | Whether a chat may relay an answer, the default workspace, whether every member's chat lists every agent, and who owns a workspace binding |
+| 13 | Workspaces and chats ([workspaces-and-chat.md](workspaces-and-chat.md)) | **Decided:** a chat may list the agents visible to members, submit, read and relay the person's answer, never approve; "Discuss in chat" defaults to the workspace that started the task if it is on this device. Agents bound to a workspace come after the pilot | Who owns a workspace binding, the agent's owner or the organization |
 
 ## The brief's artefacts
 

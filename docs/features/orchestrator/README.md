@@ -163,14 +163,15 @@ All are proposals until a maintainer confirms. "Needs" names who should confirm.
 | D13 | The pilot runs self-hosted on one local device the team controls, using Docker Compose, Den's stub provisioner and the headless runner. Kubernetes and hybrid stay supported later. | Full control, nothing outside the machine required, same code paths as production. Taken from the project owner's answer on 2026-10-01 ("the one we can have full access, and once deployed on a local device does not give any issues") | Project owner to confirm this reading |
 | D14 | A2A is the agent-to-agent protocol at every agent boundary. The orchestrator is the A2A server for each agent it runs and the A2A client when an agent delegates, so every exchange is a durable, guarded task. Internal message types stay, because they carry governance fields, and are projected to A2A. | Interoperability for free; the guarantees in this plan apply to every exchange | Architecture owner |
 | D15 | A finished task is never reopened. Retrying creates a new task that references the old one. | A2A forbids messages to finished tasks, and it makes the record easier to audit | Architecture owner |
-| D16 | The A2A binding is HTTP+JSON under `/a2a`, as a protocol adapter. In the pilot every agent is `internal` and no remote agents are registered. | One operation per route keeps authorisation and audit simple; widening exposure is a separate security decision | Security owner |
+| D16 | The A2A binding is HTTP+JSON under `/a2a`, as a protocol adapter. In the pilot agents are `internal` or `members`, none is `organization`, and no remote agents are registered. | One operation per route keeps authorisation and audit simple; widening exposure is a separate security decision | Security owner |
 | D17 | The orchestrator backend is built in the original repository layout. The Replit workspace's `artifacts/openwork` is a preview and a source to port the tab from. | Den, the headless runner, the database package and the evals only exist in the original layout | Maintainers |
 | D18 | Every agent except the root has exactly one direct manager. There is no matrix reporting, and no loops. | A single line of authority keeps escalation, approval and accountability unambiguous | Product owner |
 | D19 | A manager agent can satisfy an internal approval but never an approval for an external write or an irreversible action. Those stay with a person at every control degree. | A manager agent is software; the human floor in governance.md must not have a path around it | Security owner |
 | D20 | Changing the hierarchy needs the right to activate a version, and every change is a ledger entry. Agents may recommend a change but never make one. The span limit is 7 and breaches are flagged, not blocked, until the organization chooses `block`. | The hierarchy decides who has authority, so it is governed like configuration. The limit of 7 is a starting point to confirm | Product owner |
 | D21 | The Orchestrator stays organization-scoped. A workspace or a chat is a reference: an origin on a task and an optional binding on an agent. It is never a parent. | Same placement as Automations; keeps one queue, one ledger and one set of limits | Product owner |
-| D22 | Chats reach the Orchestrator through gateway capabilities, in the remote-session pattern. A chat can list agents, submit a task and read it. It cannot approve, answer, configure or change the hierarchy. | Reuses what every workspace already has; keeps people's decisions with people | Security owner |
+| D22 | Chats reach the Orchestrator through gateway capabilities, in the remote-session pattern. A chat can list the agents visible to members, submit a task, read it, and relay the person's answer to a question put to them. It cannot approve, configure or change the hierarchy. | Reuses what every workspace already has; approvals and configuration stay a person's act in the tab. Decided by the project owner for answers | Security owner |
 | D23 | A task that came from a chat, an MCP client, an event or an outside caller starts tainted. An origin is a label and carries ids only. | A chat may have read hostile text; taint already limits what such a task can do | Security owner |
+| D24 | An agent is visible to members' chats and MCP clients only when its `a2a.exposure` is `members` or `organization`. `members` is not served over A2A; `organization` is. Decided by the project owner. | Members see only the agents meant for them; widening A2A stays a separate security decision | Product owner |
 
 ## Traceability to the brief
 
@@ -188,7 +189,7 @@ All are proposals until a maintainer confirms. "Needs" names who should confirm.
 | No uncontrolled loops or duplicates | governance.md "Loop and spend controls", architecture.md "Idempotency" | test-plan.md R5, R10, G1 to G4, spec J4 |
 | Sample multi-agent workflow | sample-process.md | spec J1, J2 |
 | Span of control and dependency reporting (the follow-on task) | hierarchy.md | test-plan.md H1 to H14, spec J6 |
-| Linking to workspaces and the current chat (the follow-on question) | workspaces-and-chat.md | test-plan.md W1 to W9, spec J7 |
+| Linking to workspaces and the current chat (the follow-on question) | workspaces-and-chat.md | test-plan.md W1 to W14, spec J7 |
 
 ## Out of scope
 

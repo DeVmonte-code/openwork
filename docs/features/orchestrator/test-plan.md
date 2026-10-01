@@ -184,11 +184,16 @@ domain layer; the rest run in the service layer and the journey.
 | W2 | Taint by origin | A chat, an MCP client, an event source and an outside caller start tainted; the Orchestrator itself and a schedule do not |
 | W3 | Submit from a chat | One root task with the origin; the same call retried creates no second task |
 | W4 | Identity | The member comes from the token and not from arguments; another member's task is a 404 |
-| W5 | What a chat cannot do | Approve, decline, answer and configure have no capability; each returns `unknown_capability` |
+| W5 | What a chat cannot do | Approve, decline, edit an agent and change the hierarchy have no capability and return `unknown_capability` |
 | W6 | The scope | Without the `orchestrator` scope, or with the feature off, the capabilities are not listed by `search_capabilities` |
 | W7 | Discuss in chat | The composer opens with the draft unsent; a member without `orchestrator.view_content` gets title and state only |
 | W8 | Back to chat | The link is hidden when the workspace is not on this device or the signed-in member differs |
 | W9 | No loop | The Orchestrator never sends a prompt into a chat; submissions beyond the per-member limit are refused with `rate_limited` |
+| W10 | A relayed answer is accepted | The person asked, with the question's digest, answers once; the task continues, the timeline says "Answered from a chat", the ledger has `task.answered_via_chat` |
+| W11 | A relayed answer is refused | Another member, a question for an agent or manager, an answered or expired question, a wrong digest, an answer outside the offered options: each is refused with its reason and nothing is recorded as answered |
+| W12 | Taint after a relay | A task answered through a chat is tainted afterwards: an external write needs approval, an irreversible one is denied |
+| W13 | The policy | With `chatAnswers` off, `orchestrator:answer` is not listed and a call returns `unknown_capability` |
+| W14 | Visibility | `orchestrator:list_agents` shows only `members` and `organization` agents; submitting to an `internal` agent returns `not_found`; the tab still reaches every agent |
 
 ## Journey specs
 
@@ -259,8 +264,10 @@ only, and bounded waits.
 5. when the member opens the card and approves in the Orchestrator
 6. after: the reply is sent once, and the card in the chat shows the task finished
 7. negative: asking the chat's agent to approve instead finds no such capability, and the approval stays pending
-8. when the member chooses **Discuss in chat** on the task
-9. then the composer opens with a summary and a link, and nothing is sent until they send it
+8. when an agent asks the member a question and the member tells the chat the answer
+9. then the timeline shows "Answered from a chat", the task is tainted (witness), and a different member's attempt to relay the same answer is refused
+10. when the member chooses **Discuss in chat** on the task
+11. then the composer opens with a summary and a link, and nothing is sent until they send it
 
 ## Load and soak
 

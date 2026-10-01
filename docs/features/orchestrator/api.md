@@ -102,7 +102,7 @@ parses.
 | `POST /v1/orchestrator-tasks/{taskId}/reassign` | Move a queued or dead-lettered task to another agent | `operate` |
 | `POST /v1/orchestrator-tasks/{taskId}/discard` | Close a dead letter with a reason | `operate` |
 | `PATCH /v1/orchestrator-tasks/{taskId}` | Change `priority` or `deadlineAt` of a non-terminal task | `operate` |
-| `POST /v1/orchestrator-tasks/{taskId}/answer` | Answer a clarification | the asked member or `operate` |
+| `POST /v1/orchestrator-tasks/{taskId}/answer` | Answer a clarification. The server records `answeredVia` from the route (`orchestrator` here, `chat` or `mcp_client` on the gateway); a caller cannot choose it | the asked member or `operate` |
 
 ```json
 {
@@ -284,15 +284,17 @@ ledger.
 
 | Capability | Does | Permission |
 | --- | --- | --- |
-| `orchestrator:list_agents` | Running agents, the requests each handles, state | `view` |
+| `orchestrator:list_agents` | Running agents whose `a2a.exposure` is `members` or `organization`, the requests each handles, state | `view` |
 | `orchestrator:submit_task` | Same as `POST /v1/orchestrator-tasks`, with `idempotencyKey` and an optional `origin` label | `submit` |
-| `orchestrator:get_task` | Task state, result and timeline summary | `view`, or the caller's own submissions |
+| `orchestrator:get_task` | Task state, result and timeline summary. An open question comes back with its `requestMessageId`, its options and a `questionDigest` | `view`, or the caller's own submissions |
+| `orchestrator:answer` | Relays the person's answer to an open question put to them: `{ taskId, requestMessageId, questionDigest, answer, idempotencyKey }`. Off when the policy `chatAnswers` is off | the member the question was put to |
 
 The `Orchestrator` API tag is deliberately **not** added to the MCP allow list in
 `ee/apps/den-api/src/mcp/policy.ts`. The catalogue is generated from the OpenAPI document and
 filtered by tag, so exposing the tag would expose approvals, configuration, the hierarchy and
-the kill switch. Approving, declining, answering and editing have no capability; a call for
-them returns `unknown_capability`. See [workspaces-and-chat.md](workspaces-and-chat.md).
+the kill switch. Approving, declining, editing an agent and changing the hierarchy have no capability; a call
+for them returns `unknown_capability`. `orchestrator:submit_task` to an agent that is not visible
+to members returns `not_found`. See [workspaces-and-chat.md](workspaces-and-chat.md).
 
 ## Errors
 

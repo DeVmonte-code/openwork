@@ -30,7 +30,7 @@ Status: proposal. Part of [the orchestrator plan](README.md). Covers brief step 
 | Instructions or system prompt | `instructions` | Encrypted at rest. Guardrails are extra lines appended to every attempt |
 | Model | `model` | A primary and up to two fallbacks, tried in order after `model_failure` |
 | Tool access | `tools` | Allow and deny lists of catalogue capabilities, and which orchestrator tools the agent gets |
-| Discovery and the requests it handles | `a2a` | `skills` become the skills on the agent's Agent Card, each tied to a task type in `role.accepts`, with example requests; `exposure` says how far the agent is reachable. See [a2a.md](a2a.md) |
+| Discovery and the requests it handles | `a2a` | `skills` become the skills on the agent's Agent Card, each tied to a task type in `role.accepts`, with example requests; `exposure` (`internal`, `members` or `organization`) says who can find and use it. See [a2a.md](a2a.md) |
 | Trigger conditions | `triggers` | `task` triggers (accepted types, optional `where` predicate) and `event` triggers (a webhook source, optional filter, and the task type it creates) |
 | Execution frequency | `runtime.mode`, `frequency` | Interval, daily or weekly schedule, tick interval, minimum gap, attempts per hour, quiet hours |
 | Memory and context | `memory` | Context size, scopes the agent may read and write, organization namespaces, retention |
@@ -254,8 +254,12 @@ export const agentConfigV1Schema = z.strictObject({
 
   /** How other agents discover this one and what they may ask of it (A2A Agent Card). */
   a2a: z.strictObject({
-    /** `internal`: only agents the orchestrator runs. `organization`: also authenticated organization principals. */
-    exposure: z.enum(["internal", "organization"]).default("internal"),
+    /**
+     * `internal`: only agents the orchestrator runs, and people using the Orchestrator itself.
+     * `members`: also listed to, and usable from, members' chats and MCP clients, but not served over A2A.
+     * `organization`: everything `members` allows, and also served over A2A to authenticated organization principals.
+     */
+    exposure: z.enum(["internal", "members", "organization"]).default("internal"),
     skills: z.array(z.strictObject({
       id: slugSchema,
       name: z.string().trim().min(1).max(80),

@@ -252,6 +252,7 @@ Details in [workspaces-and-chat.md](workspaces-and-chat.md). On the interface:
 - A task that came from a chat reads "Started from a chat". **Open chat** appears beside it only
   when that workspace is on this device and the signed-in member started it. Elsewhere there is
   no link, never a broken one.
+- A question answered from a chat appears in the timeline as "Answered from a chat" with the words, and the task shows as tainted under Technical details.
 - Inside a chat, an Orchestrator task shows as a card with its state and **Open in
   Orchestrator**. The consent card is never in the chat: approving stays in the tab.
 - No new sidebar row. The attention marker is organization-wide and shows in every workspace.
