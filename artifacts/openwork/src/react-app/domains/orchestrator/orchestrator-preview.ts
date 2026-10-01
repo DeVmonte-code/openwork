@@ -8,14 +8,22 @@ import {
   type HierarchyIssue,
   validateChangeManager,
 } from "./hierarchy-rules";
+import type { NeedOrigin } from "./orchestrator-discussion";
 
 // In-memory sample data only. No network, client or storage access.
 export type AgentId = "coordinator" | "intake" | "research" | "drafter" | "reviewer" | "sender" | "digest";
 export type AgentRunState = "running" | "paused";
+export type OrchestratorNeedOrigins = {
+  approval: NeedOrigin;
+  question: NeedOrigin;
+  outsideQuestion: NeedOrigin;
+};
 
 export type OrchestratorSnapshot = {
   approvalWaiting: boolean;
   questionOpen: boolean;
+  outsideQuestionOpen: boolean;
+  needOrigins: OrchestratorNeedOrigins;
   agents: Readonly<Record<AgentId, AgentRunState>>;
   hierarchy: Hierarchy;
 };
@@ -50,9 +58,26 @@ const initialHierarchy = createSampleHierarchy();
 let snapshot: OrchestratorSnapshot = {
   approvalWaiting: true,
   questionOpen: true,
+  outsideQuestionOpen: true,
+  needOrigins: {
+    approval: {
+      kind: "chat",
+      surface: "web",
+      workspaceId: "orchestrator-sample-local-workspace",
+      chatId: "orchestrator-sample-sender-chat",
+    },
+    question: {
+      kind: "chat",
+      surface: "desktop",
+      workspaceId: "orchestrator-sample-remote-workspace",
+      chatId: "orchestrator-sample-drafter-chat",
+    },
+    outsideQuestion: { kind: "outside-tool" },
+  },
   agents: agentRunStates(initialHierarchy),
   hierarchy: initialHierarchy,
 };
+let sampleOriginWorkspaceBound = false;
 const listeners = new Set<() => void>();
 const set = (next: OrchestratorSnapshot) => { snapshot = next; listeners.forEach((l) => l()); };
 const publishHierarchy = (hierarchy: Hierarchy) => set({ ...snapshot, hierarchy, agents: agentRunStates(hierarchy) });
@@ -61,6 +86,19 @@ export const orchestratorPreview = {
   subscribe(l: () => void) { listeners.add(l); return () => { listeners.delete(l); }; },
   getSnapshot: () => snapshot,
   resolveApproval() { if (snapshot.approvalWaiting) set({ ...snapshot, approvalWaiting: false }); },
+  bindSampleOriginWorkspace(workspaceId: string | undefined) {
+    if (!workspaceId || sampleOriginWorkspaceBound) return;
+    const origin = snapshot.needOrigins.approval;
+    if (origin.kind !== "chat") return;
+    sampleOriginWorkspaceBound = true;
+    set({
+      ...snapshot,
+      needOrigins: {
+        ...snapshot.needOrigins,
+        approval: { kind: origin.kind, surface: origin.surface, workspaceId, chatId: origin.chatId },
+      },
+    });
+  },
   setAgentState(id: AgentId, state: AgentRunState) {
     if (snapshot.agents[id] !== state) {
       publishHierarchy({

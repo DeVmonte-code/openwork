@@ -124,6 +124,7 @@ import { useDashboardDeploymentAvailability } from "@/react-app/domains/dashboar
 import { useAutomationDeploymentEnabled } from "@/react-app/domains/automations/automation-availability";
 import { automationsStateChangedEvent } from "@/react-app/domains/automations/automation-events";
 import { OrchestratorPage } from "@/react-app/domains/orchestrator/orchestrator-page";
+import { openOrchestratorDiscussion } from "@/react-app/domains/orchestrator/orchestrator-discussion-bridge";
 import { ORCHESTRATOR_PREVIEW_ENABLED } from "@/react-app/domains/orchestrator/orchestrator-availability";
 import { useOrchestratorPreview } from "@/react-app/domains/orchestrator/orchestrator-preview";
 import type {
@@ -3867,7 +3868,18 @@ export function SessionRoute() {
       primaryTitle={activityRouteActive ? t("activity.title") : orchestratorRouteActive ? t("orchestrator.title") : appsRouteActive ? "Dashboard" : automationsRouteActive ? "Automations" : dashboardRouteActive ? "Dashboard" : undefined}
       primaryTitleInPage={orchestratorRouteActive}
       primarySurface={activityRouteActive || orchestratorRouteActive ? "flat" : undefined}
-      primarySlot={activityRouteActive ? <ActivityPage onTrySkill={trySkillInNewSession} /> : orchestratorRouteActive ? <OrchestratorPage /> : pendingConversation ? <PendingConversationView conversation={pendingConversation} composer={newTaskComposerContext} /> : appsRouteActive ? (
+      primarySlot={activityRouteActive ? <ActivityPage onTrySkill={trySkillInNewSession} /> : orchestratorRouteActive ? (
+        <OrchestratorPage discussion={{
+          workspaces: workspaces.map((workspace) => ({ id: workspace.id, label: workspace.displayNameResolved })),
+          currentWorkspaceId: selectedWorkspaceId,
+          openDraft: (workspaceId, draft) => openOrchestratorDiscussion(
+            sessionDraftScope,
+            workspaceId,
+            draft,
+            navigate,
+          ),
+        }} />
+      ) : pendingConversation ? <PendingConversationView conversation={pendingConversation} composer={newTaskComposerContext} /> : appsRouteActive ? (
         <WorkspaceProvider
           client={opencodeClient}
           opencodeBaseUrl={opencodeBaseUrl}

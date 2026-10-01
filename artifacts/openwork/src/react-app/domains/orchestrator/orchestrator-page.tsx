@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { LockIcon, PauseIcon, PlayIcon } from "lucide-react";
 import { NavLink, useLocation, useSearchParams } from "react-router";
+import { workspaceSessionRoute } from "@/react-app/shell/workspace-routes";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -9,8 +10,20 @@ import { toast } from "@/components/ui/sonner";
 import { t } from "@/i18n";
 import { HierarchyView } from "./hierarchy-view";
 import { orchestratorPreview, useOrchestratorPreview, type AgentId } from "./orchestrator-preview";
+import {
+  discussionDraft,
+  discussionWorkspace,
+  originChatAvailable,
+  type DiscussionWorkspace,
+  type NeedOrigin,
+} from "./orchestrator-discussion";
 
 export type OrchestratorPreviewState = "default" | "empty" | "locked";
+export type OrchestratorDiscussionContext = {
+  workspaces: readonly DiscussionWorkspace[];
+  currentWorkspaceId?: string | null;
+  openDraft: (workspaceId: string, draft: string) => void;
+};
 
 const AGENTS: Array<{ id: AgentId; name: string; cost: string }> = [
   { id: "coordinator", name: "orchestrator.agent_coordinator", cost: "$0.00" },
@@ -42,7 +55,72 @@ function parseState(search: string): OrchestratorPreviewState {
   return v === "empty" || v === "locked" ? v : "default";
 }
 
-export function OrchestratorPage({ previewState }: { previewState?: OrchestratorPreviewState }) {
+function NeedOriginLine({ origin, workspaces }: { origin: NeedOrigin; workspaces: readonly DiscussionWorkspace[] }) {
+  if (origin.kind === "orchestrator") return null;
+  const isLocalChat = originChatAvailable(origin, workspaces);
+  return (
+    <p className="flex items-center gap-2 text-xs text-muted-foreground">
+      <span>{t(origin.kind === "chat" ? "orchestrator.started_from_chat" : "orchestrator.started_by_outside_tool")}</span>
+      {origin.kind === "chat" && isLocalChat ? (
+        <NavLink className="underline underline-offset-2" to={workspaceSessionRoute(origin.workspaceId, origin.chatId)}>
+          {t("orchestrator.open_chat")}
+        </NavLink>
+      ) : null}
+    </p>
+  );
+}
+
+function DiscussInChat({
+  origin,
+  item,
+  locked,
+  discussion,
+}: {
+  origin: NeedOrigin;
+  item: { title: string; state: string; agent: string; action: string };
+  locked: boolean;
+  discussion?: OrchestratorDiscussionContext;
+}) {
+  const workspaces = discussion?.workspaces ?? [];
+  const workspaceId = discussionWorkspace(origin, workspaces, discussion?.currentWorkspaceId);
+  return (
+    <div className="flex items-center gap-2">
+      {!workspaceId ? (
+        <span className="flex items-center gap-1 text-xs text-muted-foreground">
+          <LockIcon className="size-3.5" aria-hidden="true" />
+          {t("orchestrator.discuss_no_workspace")}
+        </span>
+      ) : null}
+      <Button
+        variant="ghost"
+        size="sm"
+        disabled={!workspaceId || !discussion}
+        onClick={() => {
+          if (!workspaceId || !discussion) return;
+          discussion.openDraft(workspaceId, discussionDraft(
+            item,
+            locked,
+            new URL(`${window.location.pathname}${locked ? "?state=locked" : ""}`, window.location.origin).toString(),
+            {
+              normal: t("orchestrator.discuss_draft_normal"),
+              limited: t("orchestrator.discuss_draft_limited"),
+            },
+          ));
+        }}
+      >
+        {t("orchestrator.discuss_in_chat")}
+      </Button>
+    </div>
+  );
+}
+
+export function OrchestratorPage({
+  previewState,
+  discussion,
+}: {
+  previewState?: OrchestratorPreviewState;
+  discussion?: OrchestratorDiscussionContext;
+}) {
   const [search] = useSearchParams();
   const state = previewState ?? parseState(search.toString());
   const { pathname, search: rawSearch } = useLocation();
@@ -50,6 +128,9 @@ export function OrchestratorPage({ previewState }: { previewState?: Orchestrator
   const snap = useOrchestratorPreview();
   const [loading, setLoading] = useState(true);
   useEffect(() => { const id = window.setTimeout(() => setLoading(false), 450); return () => window.clearTimeout(id); }, []);
+  useEffect(() => {
+    orchestratorPreview.bindSampleOriginWorkspace(discussion?.workspaces[0]?.id);
+  }, [discussion?.workspaces]);
   const locked = state === "locked";
 
   const toggle = (id: AgentId, name: string) => {
@@ -103,7 +184,7 @@ export function OrchestratorPage({ previewState }: { previewState?: Orchestrator
   } else {
     body = (
       <>
-        {snap.approvalWaiting || snap.questionOpen ? (
+        {snap.approvalWaiting || snap.questionOpen || snap.outsideQuestionOpen ? (
           <section aria-labelledby="orch-needs" className="flex flex-col gap-3">
             <h2 id="orch-needs" className="text-xs font-medium text-muted-foreground">{t("orchestrator.needs_you")}</h2>
             {snap.approvalWaiting ? (
@@ -114,16 +195,68 @@ export function OrchestratorPage({ previewState }: { previewState?: Orchestrator
                   <dt className="text-muted-foreground">{t("orchestrator.approval_data")}</dt><dd>{t("orchestrator.approval_data_value")}</dd>
                   <dt className="text-muted-foreground">{t("orchestrator.approval_risk")}</dt><dd>{t("orchestrator.approval_risk_value")}</dd>
                 </dl>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => { orchestratorPreview.resolveApproval(); toast(t("orchestrator.toast_declined")); }}>{t("orchestrator.decline")}</Button>
-                  <Button size="sm" onClick={() => { orchestratorPreview.resolveApproval(); toast.success(t("orchestrator.toast_sent")); }}>{t("orchestrator.approve")}</Button>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => { orchestratorPreview.resolveApproval(); toast(t("orchestrator.toast_declined")); }}>{t("orchestrator.decline")}</Button>
+                    <Button size="sm" onClick={() => { orchestratorPreview.resolveApproval(); toast.success(t("orchestrator.toast_sent")); }}>{t("orchestrator.approve")}</Button>
+                  </div>
+                  <DiscussInChat
+                    origin={snap.needOrigins.approval}
+                    item={{
+                      title: t("orchestrator.sender_approval_title"),
+                      state: t("orchestrator.sender_approval_state"),
+                      agent: t("orchestrator.approval_sender"),
+                      action: t("orchestrator.sender_approval_summary_action"),
+                    }}
+                    locked={locked}
+                    discussion={discussion}
+                  />
                 </div>
+                <NeedOriginLine origin={snap.needOrigins.approval} workspaces={discussion?.workspaces ?? []} />
               </div>
             ) : null}
             {snap.questionOpen ? (
-              <div className="flex min-h-10 items-center justify-between gap-3 border-y border-border py-1.5">
-                <p className="min-w-0 text-sm">{t("orchestrator.question")} <span className="text-xs text-muted-foreground">· {t("orchestrator.question_agent")}</span></p>
-                <Button variant="secondary" size="sm" onClick={() => toast(t("orchestrator.toast_answered"))}>{t("orchestrator.answer")}</Button>
+              <div className="flex flex-col gap-1 border-y border-border py-2">
+                <div className="flex min-h-10 items-center justify-between gap-3">
+                  <p className="min-w-0 text-sm">{t("orchestrator.question")} <span className="text-xs text-muted-foreground">· {t("orchestrator.question_agent")}</span></p>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <DiscussInChat
+                      origin={snap.needOrigins.question}
+                      item={{
+                        title: t("orchestrator.drafter_question_title"),
+                        state: t("orchestrator.drafter_question_state"),
+                        agent: t("orchestrator.question_agent"),
+                        action: t("orchestrator.drafter_question_summary_action"),
+                      }}
+                      locked={locked}
+                      discussion={discussion}
+                    />
+                    <Button variant="secondary" size="sm" onClick={() => toast(t("orchestrator.toast_answered"))}>{t("orchestrator.answer")}</Button>
+                  </div>
+                </div>
+                <NeedOriginLine origin={snap.needOrigins.question} workspaces={discussion?.workspaces ?? []} />
+              </div>
+            ) : null}
+            {snap.outsideQuestionOpen ? (
+              <div className="flex flex-col gap-1 border-b border-border py-2">
+                <div className="flex min-h-10 items-center justify-between gap-3">
+                  <p className="min-w-0 text-sm">{t("orchestrator.outside_question")} <span className="text-xs text-muted-foreground">· {t("orchestrator.research_agent")}</span></p>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <DiscussInChat
+                      origin={snap.needOrigins.outsideQuestion}
+                      item={{
+                        title: t("orchestrator.outside_question_title"),
+                        state: t("orchestrator.outside_question_state"),
+                        agent: t("orchestrator.research_agent"),
+                        action: t("orchestrator.outside_question_summary_action"),
+                      }}
+                      locked={locked}
+                      discussion={discussion}
+                    />
+                    <Button variant="secondary" size="sm" onClick={() => toast(t("orchestrator.toast_answered"))}>{t("orchestrator.answer")}</Button>
+                  </div>
+                </div>
+                <NeedOriginLine origin={snap.needOrigins.outsideQuestion} workspaces={discussion?.workspaces ?? []} />
               </div>
             ) : null}
           </section>

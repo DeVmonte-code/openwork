@@ -1,3 +1,4 @@
 - [Import target selection](import-target-selection.md) — imports can contain several separate Vercel apps; confirm the user's target before migrating one.
 - [Isolated browser previews](isolated-browser-previews.md) — Vite test harnesses must share the app's exact versioned dependency URLs to preserve React Router context.
 - [Runtime auto-installation](runtime-auto-installation.md) — avoid Python for Node-only edits when dependencies and environment changes are prohibited.
+- [Verification evidence](verification-evidence.md) — temporary logs may disappear; retain exact commands and final results in the delivery report.
