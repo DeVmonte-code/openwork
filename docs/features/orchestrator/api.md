@@ -13,9 +13,9 @@ snake_case error codes. Every route carries a `describeRoute()` with `summary`,
 
 ## Conventions
 
-- **Tags.** `Orchestrator` for the product API, and `Orchestrator runners`
+- **Tags.** `Orchestrator` for the product API, `Orchestrator runners`
   (marked `Internal`, so removed from the published snapshot) for the runner
-  protocol. Register both in `src/app.ts`.
+  protocol, and `A2A` for the protocol adapter below. Register all three in `src/app.ts`.
 - **Access.** Reads use `orgMemberRoute()` plus the permission in the tables
   below. Writes check the permission in handler code and write a ledger entry in
   the same transaction. Webhook intake is a `signedWebhookRoute`. The runner
@@ -47,6 +47,7 @@ snake_case error codes. Every route carries a `describeRoute()` with `summary`,
 | `POST /v1/orchestrator-agents/{agentId}/stop` | `stop` | `operate` |
 | `POST /v1/orchestrator-agents/{agentId}/retire` | `retire`; needs `reassignTo` if tasks are open | `admin` |
 | `GET /v1/orchestrator-agents/{agentId}/metrics` | Rollups for a window | `view` |
+| `GET /v1/orchestrator-agents/{agentId}/card` | The Agent Card generated from the active version, or from a given `agentVersionId`, for the editor's preview | `view` |
 
 Lifecycle commands return `202` with the agent, whose `state` is the transitional
 one (`starting`, `pausing`, `stopping`). They return `409 invalid_state` with the
@@ -97,7 +98,7 @@ parses.
 | `GET /v1/orchestrator-tasks/{taskId}/attempts` | Attempts with version, runner, usage, error | `view` |
 | `GET /v1/orchestrator-tasks/{taskId}/timeline` | Messages, attempts, effects and approvals merged | `view` |
 | `POST /v1/orchestrator-tasks/{taskId}/cancel` | Cancel; cascades to descendants | `operate` |
-| `POST /v1/orchestrator-tasks/{taskId}/requeue` | From `dead_lettered`; optional edited `payload` creates a superseding task | `operate` |
+| `POST /v1/orchestrator-tasks/{taskId}/requeue` | From `dead_lettered`, `failed` or `expired`; creates and returns a new task that supersedes it (optionally with an edited `payload`). The old task is never reopened | `operate` |
 | `POST /v1/orchestrator-tasks/{taskId}/reassign` | Move a queued or dead-lettered task to another agent | `operate` |
 | `POST /v1/orchestrator-tasks/{taskId}/discard` | Close a dead letter with a reason | `operate` |
 | `PATCH /v1/orchestrator-tasks/{taskId}` | Change `priority` or `deadlineAt` of a non-terminal task | `operate` |
@@ -179,6 +180,40 @@ and a resumable cursor, never data. A client that receives
 refetches the affected query. Keepalive every 15 seconds. A client that cannot
 hold the stream polls with backoff from 1 to 15 seconds. The app shows the time
 of the last successful read, so a stale view says so.
+
+## Remote agents
+
+Other organizations' or vendors' A2A agents an administrator allows our agents to call.
+Details and controls are in [governance.md](governance.md); not used in the pilot.
+
+| Method and path | Purpose | Permission |
+| --- | --- | --- |
+| `GET /v1/orchestrator-remote-agents` | List, with pinned card version and state | `admin` |
+| `POST /v1/orchestrator-remote-agents` | Register from a card URL; the card is fetched, verified and pinned | `admin` |
+| `PATCH /v1/orchestrator-remote-agents/{remoteAgentId}` | Allowed skills, data class cap, enable or disable | `admin` |
+| `POST /v1/orchestrator-remote-agents/{remoteAgentId}/refresh-card` | Fetch again; a changed card needs re-approval before use | `admin` |
+| `DELETE /v1/orchestrator-remote-agents/{remoteAgentId}` | Remove | `admin` |
+
+## The A2A endpoint
+
+A protocol adapter, as `docs/api-style.md` allows: it follows the A2A specification
+rather than the resource style above, lives under its own prefix, is tagged `A2A`,
+and is exempt from the resource-style lint rules in the way SCIM and OAuth are. Full
+design in [a2a.md](a2a.md).
+
+| A2A operation | Route (from the specification, under `/a2a`) | Needs |
+| --- | --- | --- |
+| Agent Card | `GET /a2a/{tenant}/.well-known/agent-card.json` (location to confirm, see a2a.md) | Authentication for anything beyond `internal` |
+| `SendMessage` | `POST /a2a/{tenant}/message:send` | `submit`, plus the skill's permission |
+| `GetTask` | `GET /a2a/{tenant}/tasks/{id}` | `view` of that task |
+| `ListTasks` | `GET /a2a/{tenant}/tasks` | `view` |
+| `CancelTask` | `POST /a2a/{tenant}/tasks/{id}:cancel` | `operate` or the task's creator |
+| `SubscribeToTask` | `GET /a2a/{tenant}/tasks/{id}:subscribe` (server-sent events, M6) | `view` of that task |
+
+`tenant` is the agent's slug. Every request is authenticated and every task lookup is
+scoped to the caller's organization; a task the caller may not see is "not found".
+Requests carry `A2A-Version`; any major other than `1` is refused. A2A errors use the
+specification's error shapes, not the Den error envelope.
 
 ## Runner protocol (pull-mode runners, after the pilot)
 

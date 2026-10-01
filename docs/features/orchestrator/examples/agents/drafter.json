@@ -19,6 +19,19 @@
     "allow": [{"capability": "workspace.write_draft"}],
     "orchestrator": ["report_status", "ask_clarification", "delegate_task"]
   },
+  "a2a": {
+    "exposure": "internal",
+    "skills": [
+      {
+        "id": "draft-reply",
+        "name": "Draft a reply",
+        "description": "Writes a clear, polite reply from researched facts and saves it as a draft.",
+        "tags": ["writing", "support"],
+        "examples": ["Draft a reply to request r1 using these three facts"],
+        "taskType": "reply.draft.requested"
+      }
+    ]
+  },
   "permissions": {"inputTrust": "trusted", "delegateTo": ["reviewer"]},
   "limits": {
     "maxVisitsPerProcess": 3,

@@ -13,7 +13,10 @@ pauses, resumes, restarts and stops it. Agents pass work to each other as
 durable tasks, nothing is lost on a restart, risky actions wait for a person,
 and every change and decision is on the record.
 
-The tab is a window onto a service. It is not where the agents live.
+Agents are listed with an **Agent Card** generated from their configuration, and they
+talk to each other over the open **A2A (Agent2Agent) protocol**, so the same cards and
+messages work with agents outside OpenWork. The tab is a window onto a service. It is
+not where the agents live.
 
 ## Why the orchestrator lives in Den, not in the desktop app
 
@@ -69,6 +72,7 @@ share infrastructure and neither replaces the other; see
 | [architecture.md](architecture.md) | 1, 3, 4, 5 | Operating model, state machines, durable queue, workers, failure modes |
 | [agent-config.md](agent-config.md) | 2 | Versioned configuration schema, validation, activation, rollback |
 | [messaging.md](messaging.md) | 6 | Agent-to-agent message contract and history |
+| [a2a.md](a2a.md) | 3, 6 | The A2A protocol: Agent Cards, task states, delegation as A2A messages, remote agents, interoperability |
 | [memory.md](memory.md) | 7 | Task context versus durable memory, retention, access |
 | [governance.md](governance.md) | 8 | Permission matrix, approvals, secrets, ledger, loop and spend controls, threat model |
 | [api.md](api.md) | 10 | HTTP, stream, runner and MCP surfaces |
@@ -93,12 +97,26 @@ use. To keep the two apart, new code locations use `agent-orchestrator`
 database tables, API paths and the app folder keep the plain `orchestrator`
 prefix because nothing there collides.
 
+## Where the paths in these documents point
+
+Paths such as `apps/app`, `ee/apps/den-api` and `packages/automations` are relative to
+the original OpenWork repository root. On this fork's `dev` branch,
+the Replit migration moved that whole repository under `.migration-backup/` and made the
+root a Replit workspace. The migrated web app, including the preview of the Orchestrator
+tab, is in `artifacts/openwork/`, and its `src` mirrors `apps/app/src`. Read every path in
+this plan as `.migration-backup/<path>` on that branch. The Replit workspace has no Den,
+no headless runner and no database package, so the backend described here cannot be
+built there (decision D17).
+
 ## Glossary
 
 | Term | Meaning |
 | --- | --- |
 | Agent | A named, configured actor with an owner, versioned configuration, and a lifecycle state |
 | Agent version | One immutable, validated snapshot of an agent's configuration |
+| Agent Card | An agent's listing in the A2A protocol: name, description, skills, how to reach it and how to authenticate. Generated from the active configuration |
+| A2A skill ("Request it handles") | One thing an agent can be asked to do, tied to a task type it accepts. Not the same as a Library skill |
+| Remote agent | An A2A agent outside the organization that an administrator has registered |
 | Task | A durable unit of work in the queue. Triggers, schedules and delegation all produce tasks; agents only ever process tasks |
 | Process | A root task plus every task descended from it. It shares one correlation id, one budget and one set of loop limits. The product already uses "Workflow" for Code Mode scripts, so this plan avoids that word |
 | Attempt | One lease-bound try at a task by one agent. Fenced: a stale attempt cannot write |
@@ -126,6 +144,10 @@ All are proposals until a maintainer confirms. "Needs" names who should confirm.
 | D11 | Writing orchestrator configuration is an Enterprise feature. Pause, stop, retire and reading are never gated. | `docs/enterprise-plan-gating.md` | Product owner |
 | D12 | The orchestrator is scoped to one organization. | Same as Automations | Architecture owner |
 | D13 | The pilot runs self-hosted on one local device the team controls, using Docker Compose, Den's stub provisioner and the headless runner. Kubernetes and hybrid stay supported later. | Full control, nothing outside the machine required, same code paths as production. Taken from the project owner's answer on 2026-10-01 ("the one we can have full access, and once deployed on a local device does not give any issues") | Project owner to confirm this reading |
+| D14 | A2A is the agent-to-agent protocol at every agent boundary. The orchestrator is the A2A server for each agent it runs and the A2A client when an agent delegates, so every exchange is a durable, guarded task. Internal message types stay, because they carry governance fields, and are projected to A2A. | Interoperability for free; the guarantees in this plan apply to every exchange | Architecture owner |
+| D15 | A finished task is never reopened. Retrying creates a new task that references the old one. | A2A forbids messages to finished tasks, and it makes the record easier to audit | Architecture owner |
+| D16 | The A2A binding is HTTP+JSON under `/a2a`, as a protocol adapter. In the pilot every agent is `internal` and no remote agents are registered. | One operation per route keeps authorisation and audit simple; widening exposure is a separate security decision | Security owner |
+| D17 | The orchestrator backend is built in the original repository layout. The Replit workspace's `artifacts/openwork` is a preview and a source to port the tab from. | Den, the headless runner, the database package and the evals only exist in the original layout | Maintainers |
 
 ## Traceability to the brief
 
@@ -134,7 +156,7 @@ All are proposals until a maintainer confirms. "Needs" names who should confirm.
 | Start, stop, pause, resume, restart | architecture.md "Agent lifecycle" | test-plan.md L1 to L6, spec J1 |
 | Independent configuration of the nine fields | agent-config.md "Field reference" | agent-config.md "Validation", test-plan.md C1 to C5 |
 | Concurrent long-lived or scheduled agents | architecture.md "Run modes" | test-plan.md R9, spec J1 |
-| Tasks and structured messages between agents | messaging.md | sample-process.md, spec J1 |
+| Tasks and structured messages between agents | messaging.md, a2a.md | sample-process.md, test-plan.md X1 to X10, spec J1 |
 | Durable queue | architecture.md "Durable queue" | test-plan.md R1 to R4 |
 | Health, status, output, errors, usage observable | operations.md "Observability" | test-plan.md O1 to O3 |
 | Recovery by policy | architecture.md "Failure modes", agent-config.md "Retry and escalation" | test-plan.md R1 to R8 |

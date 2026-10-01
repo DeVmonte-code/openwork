@@ -110,6 +110,23 @@ side. Plus:
 | P5 | An agent drives the UI control surface | No command exists to approve or decline |
 | P6 | A downgraded organization | Writes return `402`; reads, pause, stop, retire still work |
 
+## X: A2A
+
+Protocol design in [a2a.md](a2a.md).
+
+| Id | Scenario | Expected |
+| --- | --- | --- |
+| X1 | The types match the specification | The hand-written schemas agree with types generated from the pinned `a2a.proto` and published JSON schema; a change in the specification breaks the build |
+| X2 | An official SDK client sends a message | `SendMessage` returns a task; `GetTask` shows `SUBMITTED`, `WORKING`, `COMPLETED`; the artifact is readable |
+| X3 | Multi-turn | A task in `INPUT_REQUIRED` accepts a follow-up on the same `taskId` and `contextId` and completes |
+| X4 | Finished tasks stay finished | A message to a `COMPLETED`, `FAILED` or `CANCELED` task is refused; re-queuing creates a new task that references the old one |
+| X5 | Idempotency | The same `messageId` from the same caller returns the same task, never a second |
+| X6 | Authorization | No credentials, another organization, and a caller without the skill's permission all get the specification's errors; none reveals that the task exists |
+| X7 | Approval over A2A | A task waiting for approval is `AUTH_REQUIRED` with the approval described in a `data` part; a client cannot approve it; after a person approves, the task is `WORKING` and never `SUBMITTED` again |
+| X8 | Agent Cards | Every active agent has a card that validates; its skills match `role.accepts`; the version equals the active configuration version; a draft is never served |
+| X9 | Remote agents | An unregistered host, a changed card, a redirect to a private address, and an over-size response are all refused; a call counts as an external write and needs approval; the result taints the task |
+| X10 | Version | An unsupported major `A2A-Version` is refused; unknown extensions are ignored when `required` is false |
+
 ## G: governance and controls
 
 | Id | Scenario | Expected |

@@ -50,6 +50,7 @@ same facts are in the logs and rollups.
 | `orchestrator_effects_total` | counter | `agent`, `tier`, `outcome` |
 | `orchestrator_ledger_head_sequence`, `_verify_failures_total` | gauge, counter | none |
 | `orchestrator_reconciler_cycle_seconds` | histogram | `step` |
+| `orchestrator_a2a_requests_total` | counter | `operation`, `outcome` |
 
 Labels use agent slugs, never task ids, to keep cardinality bounded.
 
@@ -179,6 +180,8 @@ default: it enables public signup and uses development credentials.
 - Keep every port bound to loopback. For a second device, use an SSH tunnel or a
   private network, as the evaluation guide describes.
 - Keep `.env` private (`umask 077`) and out of version control.
+- Keep the A2A endpoint on loopback too. It needs TLS before any other device can reach
+  it, so use a TLS tunnel rather than opening the port.
 
 **What a single device cannot give you.**
 

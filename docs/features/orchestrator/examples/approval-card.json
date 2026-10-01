@@ -1,0 +1,20 @@
+{
+  "approvalId": "apr_01j9z8q2k4mc",
+  "taskId": "tsk_01j9z8q2k4m9",
+  "attemptId": "atm_01j9z8q2k4mb",
+  "agentId": "agt_01j9z8q2k4m7",
+  "effectKey": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "capability": "mail.send_reply",
+  "tier": "external_write",
+  "action": "Send reply to 1 recipient",
+  "data": "The drafted reply and the original request's sender address",
+  "risk": "The recipient sees it right away. It cannot be unsent.",
+  "reversible": false,
+  "argsDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "argsPreview": {
+    "threadId": "thr_r1",
+    "bodyChars": 612
+  },
+  "minApprovals": 1,
+  "expiresAt": "2026-10-02T09:14:00.000Z"
+}

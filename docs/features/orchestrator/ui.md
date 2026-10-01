@@ -181,6 +181,28 @@ The ledger in plain sentences with the actor and time: "Ana activated Sender
 version 3", "Dev declined a send". Filter by agent or person. Export and verify
 are in the overflow menu for those with the permission.
 
+## Reference: creating an agent
+
+The agents it creates are listed with the Agent Cards described in [a2a.md](a2a.md). The
+reference layout is a mainstream agent builder: a form on the right with Configure
+and Preview tabs, and sections for instructions, skills, knowledge and suggested
+prompts, with a conversational helper on the left. It is a layout reference only; the
+product follows `DESIGN.md`, which means no cards inside cards, no explanatory
+tooltips in place of state, and plain words.
+
+| Reference section | Here |
+| --- | --- |
+| Name, icon, one-line description | Basics. The description is what other agents and people see on the agent's card |
+| Instructions, with "Suggest improvements" | Instructions. Assisted rewriting is a later addition; v1 is a plain text field with a character count |
+| Skills | Two different things. **Skills**: the Library skills attached to this agent. **Requests it handles**: what others can ask it, which become the skills on its Agent Card, each with example requests |
+| Knowledge, with work content toggles | **What it can read**: organization memory namespaces and connected sources it may use; each is a visible row with its data class |
+| Suggested prompts (title and message) | **Example requests**, shared with the card's skill examples, shown on the agent page as one-click starters |
+| Configure and Preview | The same two tabs. **Preview** runs the configuration against a sample request with mock tools (the V4 simulation), so a draft can be tried before activation |
+
+"Create" becomes **Save draft**, then **Activate version N**, as described above.
+The list that results is the Agents view, and each row can show the agent's card in
+Technical details.
+
 ## Words people see
 
 | Internal | Shown as |
@@ -194,6 +216,8 @@ are in the overflow menu for those with the permission.
 | `waiting_approval` | Waiting for approval |
 | `waiting_input` | Waiting for an answer |
 | `waiting_children` | Waiting on other agents |
+| A2A skill | Request it handles |
+| Agent Card | Listing |
 | `succeeded` | Done |
 | `failed` | Failed |
 | `dead_lettered` | Needs your help |

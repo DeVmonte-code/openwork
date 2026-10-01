@@ -34,7 +34,7 @@ the permissions below where the Den API supports them.
 | `orchestrator.memory` | Review proposals, curate organization memory | yes | yes | yes | no | no |
 | `orchestrator.audit` | Read the ledger | yes | yes | yes | no | no |
 | `orchestrator.audit_export` | Export and verify the ledger | yes | yes | no | no | no |
-| `orchestrator.admin` | Retire agents, edit organization policy, tier overrides, event sources, kill switch | yes | yes | no | no | no |
+| `orchestrator.admin` | Retire agents, edit organization policy, tier overrides, event sources, remote agents, kill switch | yes | yes | no | no | no |
 
 Notes:
 
@@ -90,7 +90,8 @@ can raise a tier at will and can lower one only through a recorded
 ### Taint
 
 A task is **tainted** when any task earlier in its process ran on an agent with
-`inputTrust: "untrusted"`, or when it came from an external event. Taint is
+`inputTrust: "untrusted"`, when it came from an external event, or when it consumed a
+message, card or artifact from a remote agent. Taint is
 inherited by every child and is never cleared. On a tainted task:
 
 - `external_write` effects always need approval, even if the config's
@@ -160,6 +161,34 @@ proves the approver saw what will run.
 - **Rate.** An agent that raises more than a set number of approvals per hour
   (default 20) is quarantined, because a flood of approvals trains people to
   click through.
+
+## Remote agents (A2A)
+
+Our agents may call agents outside the organization over A2A, and, later, outside
+agents may call ours. Both directions send data across the boundary, so both are
+controlled. None of this is used in the pilot ([a2a.md](a2a.md) has the protocol side).
+
+- **Registration.** An administrator registers a remote agent from its Agent Card URL.
+  The card is fetched over HTTPS, its signature is verified when it has one, and its
+  URL and digest are pinned. A card that changes needs re-approval before the agent is
+  called again, so a quiet swap of what a remote agent says it is cannot go unnoticed.
+- **Which of our agents.** Only an agent that lists `remote:<name>` in
+  `permissions.delegateTo` may call it, and only for the skills the administrator
+  allowed.
+- **Every call is an external write.** The effect gateway classifies a call to a remote
+  agent as `external_write`: approval by default, a data class cap for what may be sent,
+  budgets, and a ledger entry. A remote call is never `read`, because the question
+  itself leaves the organization.
+- **Network.** HTTPS only, hosts on an allow list, no redirects to other hosts or to
+  private address ranges, the resolved address checked before connecting, response size
+  and time limits.
+- **What returns is untrusted.** Output from a remote agent taints the task, is quoted as
+  data, and cannot change instructions or permissions.
+- **Credentials.** A remote agent's credential is stored like any connection credential
+  and resolved server-side; agents never hold it.
+- **Calls into the organization.** An outside caller is a principal registered by an
+  administrator, with its own credential, the skills it may use, rate limits and a
+  data class cap. It sees only tasks it created.
 
 ## Secrets
 
@@ -292,7 +321,8 @@ One row per organization, with a `revision` like `audit_policy`, edited only by
 `processCostMicroUsd`, `minIntervalMs`, `maxConcurrencyPerAgent`, `enabledTargets`,
 `allowIrreversible`, `requireSecondActivator`, `memberSubmit`,
 `autoCommitTrustedNamespaces`, `messageBodyRetentionDays`, `providerClearance`,
-`tierOverrides`, `effectVerifiers` (per capability: a read-only capability, an
+`tierOverrides`, `remoteAgents` (allow list, allowed skills, data class cap), `a2aExposure` (the widest exposure any
+agent may be given), `effectVerifiers` (per capability: a read-only capability, an
 argument mapping and a success test, used to settle unknown effects), `costCaps`
 (day, month), and the kill switch state.
 
@@ -312,3 +342,6 @@ argument mapping and a success test, used to settle unknown effects), `costCaps`
 | T10 | Approval fatigue | A person clicks through 200 requests | Rate limit and quarantine; no bulk approval; exact-argument card; ageing escalation |
 | T11 | Stale authority | The owner leaves | Authority re-checked per request; quarantine on loss |
 | T12 | Event flood | A webhook is spammed | Signature and replay window; queue depth and open-process caps; per-source rate limit |
+| T13 | Card spoofing or swap | A remote agent's card changes to claim new abilities, or a look-alike card is served | Signature verification where present, URL and digest pinning, re-approval on change, administrator-only registration |
+| T14 | Request forgery through agent URLs | A card or a redirect points at an internal address | HTTPS only, host allow list, no private ranges, resolved address checked, no redirects to other hosts; push notification webhooks are not offered in v1 |
+| T15 | Injection through another agent's output | A remote agent returns text that tells ours to ignore its rules | Output is data, taints the task, is schema-checked where a skill defines a result, and approvals still show the exact action |

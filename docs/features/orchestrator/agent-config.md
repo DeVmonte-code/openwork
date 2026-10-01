@@ -30,6 +30,7 @@ Status: proposal. Part of [the orchestrator plan](README.md). Covers brief step 
 | Instructions or system prompt | `instructions` | Encrypted at rest. Guardrails are extra lines appended to every attempt |
 | Model | `model` | A primary and up to two fallbacks, tried in order after `model_failure` |
 | Tool access | `tools` | Allow and deny lists of catalogue capabilities, and which orchestrator tools the agent gets |
+| Discovery and the requests it handles | `a2a` | `skills` become the skills on the agent's Agent Card, each tied to a task type in `role.accepts`, with example requests; `exposure` says how far the agent is reachable. See [a2a.md](a2a.md) |
 | Trigger conditions | `triggers` | `task` triggers (accepted types, optional `where` predicate) and `event` triggers (a webhook source, optional filter, and the task type it creates) |
 | Execution frequency | `runtime.mode`, `frequency` | Interval, daily or weekly schedule, tick interval, minimum gap, attempts per hour, quiet hours |
 | Memory and context | `memory` | Context size, scopes the agent may read and write, organization namespaces, retention |
@@ -246,6 +247,22 @@ export const agentConfigV1Schema = z.strictObject({
       .default(["report_status", "ask_clarification", "complete_task", "fail_task"]),
   }).prefault({}),
 
+  /** How other agents discover this one and what they may ask of it (A2A Agent Card). */
+  a2a: z.strictObject({
+    /** `internal`: only agents the orchestrator runs. `organization`: also authenticated organization principals. */
+    exposure: z.enum(["internal", "organization"]).default("internal"),
+    skills: z.array(z.strictObject({
+      id: slugSchema,
+      name: z.string().trim().min(1).max(80),
+      description: z.string().trim().min(1).max(500),
+      tags: z.array(z.string().trim().min(1).max(40)).min(1).max(10),
+      /** Sample requests. They appear on the Agent Card and as suggested prompts in the builder. */
+      examples: z.array(z.string().trim().min(1).max(300)).max(5).default([]),
+      /** The task type a request for this skill becomes. Must be one the agent accepts. */
+      taskType: typeNameSchema,
+    })).max(10).default([]),
+  }).prefault({}),
+
   permissions: z.strictObject({
     /** Declares whether this agent reads content an outsider can write. */
     inputTrust: z.enum(["trusted", "untrusted"]),
@@ -366,6 +383,19 @@ export const agentConfigV1Schema = z.strictObject({
     }
   })
 
+  const skillIds = new Set<string>()
+  config.a2a.skills.forEach((skill, index) => {
+    if (skillIds.has(skill.id)) issue(["a2a", "skills", index, "id"], `Skill id ${skill.id} is used twice`)
+    skillIds.add(skill.id)
+    if (!acceptedTypes.has(skill.taskType)) {
+      issue(["a2a", "skills", index, "taskType"], `Task type ${skill.taskType} is not in role.accepts`)
+    }
+  })
+  if (config.a2a.exposure !== "internal") {
+    if (!config.identity.description) issue(["identity", "description"], "An agent reachable beyond the orchestrator needs a description for its Agent Card")
+    if (config.a2a.skills.length === 0) issue(["a2a", "skills"], "An agent reachable beyond the orchestrator must advertise at least one skill")
+  }
+
   const canDelegate = config.tools.orchestrator.includes("delegate_task")
   if (canDelegate && config.permissions.delegateTo.length === 0) {
     issue(["permissions", "delegateTo"], "delegate_task needs at least one delegation target")
@@ -439,6 +469,19 @@ external-write tool. The others are in `examples/agents/`.
     ],
     "orchestrator": ["report_status", "request_approval"]
   },
+  "a2a": {
+    "exposure": "internal",
+    "skills": [
+      {
+        "id": "send-reply",
+        "name": "Send an approved reply",
+        "description": "Sends one reply after a person approves it, and confirms it went out exactly once.",
+        "tags": ["send", "approval-required"],
+        "examples": ["Send the approved reply for request r1"],
+        "taskType": "reply.send.requested"
+      }
+    ]
+  },
   "permissions": {
     "inputTrust": "trusted",
     "approvals": {
@@ -485,7 +528,7 @@ presets of the same schema, not separate types.
 
 A version cannot be activated until it has passed levels 1 to 3 against the
 organization's current state. Level 4 is optional. Validation is a pure function
-in `packages/agent-orchestrator` with its ports (tool catalogue, member access,
+in `packages/orchestrator` with its ports (tool catalogue, member access,
 organization policy) injected, so every rule is unit-testable.
 
 | Level | Checks |
@@ -515,6 +558,7 @@ them.
 | `interval_too_short` | V3 | error | Shorter than the organization minimum |
 | `data_class_exceeds_provider` | V3 | error | The model's provider is not cleared for the agent's data classes |
 | `target_not_available` | V3 | error | The runner target is not enabled for this organization |
+| `agent_card_incomplete` | V3 | error | The agent is reachable beyond `internal` but has no description, no skill, or no authentication scheme configured for the organization |
 | `simulation_failed` | V4 | error | The dry run did not finish cleanly |
 
 ## Versioning

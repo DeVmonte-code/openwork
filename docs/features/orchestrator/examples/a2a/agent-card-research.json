@@ -1,0 +1,67 @@
+{
+  "name": "Research",
+  "description": "Gather the facts needed to answer one request",
+  "version": "3",
+  "supportedInterfaces": [
+    {
+      "url": "https://den.example.com/a2a",
+      "protocolBinding": "HTTP+JSON",
+      "protocolVersion": "1.0",
+      "tenant": "research"
+    }
+  ],
+  "capabilities": {
+    "streaming": false,
+    "pushNotifications": false,
+    "extendedAgentCard": false,
+    "extensions": [
+      {
+        "uri": "https://openwork.example/a2a/extensions/process/v1",
+        "description": "Skill selection, hop count and taint on messages and tasks",
+        "required": false
+      },
+      {
+        "uri": "https://openwork.example/a2a/extensions/approval/v1",
+        "description": "Approval details when a task waits for a person",
+        "required": false
+      },
+      {
+        "uri": "https://openwork.example/a2a/extensions/budget/v1",
+        "description": "Cost reserved and spent by a task",
+        "required": false
+      }
+    ]
+  },
+  "securitySchemes": {},
+  "securityRequirements": [],
+  "defaultInputModes": [
+    "text/plain",
+    "application/json"
+  ],
+  "defaultOutputModes": [
+    "text/plain",
+    "application/json"
+  ],
+  "skills": [
+    {
+      "id": "research-request",
+      "name": "Research a request",
+      "description": "Gathers the facts needed to answer one inbound request and returns cited findings.",
+      "tags": [
+        "research",
+        "support"
+      ],
+      "examples": [
+        "Find what we know about request r1 and cite the playbook entries you used"
+      ],
+      "inputModes": [
+        "text/plain",
+        "application/json"
+      ],
+      "outputModes": [
+        "text/plain",
+        "application/json"
+      ]
+    }
+  ]
+}

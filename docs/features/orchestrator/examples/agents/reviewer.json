@@ -22,6 +22,19 @@
     "allow": [{"capability": "kb.search"}],
     "orchestrator": ["report_status", "ask_clarification", "delegate_task", "memory_read"]
   },
+  "a2a": {
+    "exposure": "internal",
+    "skills": [
+      {
+        "id": "review-reply",
+        "name": "Review a reply",
+        "description": "Checks a draft against the reply rubric and either passes it on or returns it with specific fixes.",
+        "tags": ["review", "quality"],
+        "examples": ["Review the draft for request r1 against the rubric"],
+        "taskType": "reply.review.requested"
+      }
+    ]
+  },
   "permissions": {"inputTrust": "trusted", "delegateTo": ["sender", "drafter"]},
   "memory": {"read": ["task", "org"], "write": ["task"], "orgNamespaces": ["playbooks"]},
   "limits": {

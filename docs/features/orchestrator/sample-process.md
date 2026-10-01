@@ -24,7 +24,10 @@ Configurations are in `examples/agents/`. Each validates against the schema in
 | Sender | `sender.json` | event | `reply.send.requested` | no | `mail.find_sent` (read), `mail.send_reply` (external write) | none |
 | Daily digest | `digest.json` | schedule, daily 08:00 UTC | the clock | no | `inspect_queue`, `notify` | none |
 
-All three run modes are present. Only the Sender can change the outside world,
+Every agent that accepts work has an Agent Card, generated from its configuration
+(the `a2a` block in each file; the research agent's card is in
+`examples/a2a/agent-card-research.json`), and each hand-off below is an A2A message
+that passes through the orchestrator ([a2a.md](a2a.md)). All three run modes are present. Only the Sender can change the outside world,
 and `mail.send_reply` replies within one thread and takes no recipient, so even
 a persuaded model cannot send to a new address.
 

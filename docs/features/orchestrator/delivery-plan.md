@@ -48,6 +48,8 @@ or changed each decision in this folder.
   ports, agent and task state machines, idempotency key derivation, loop
   guards, backoff, the effect state machine, ledger hashing, the repository and
   runner ports, an in-memory repository, and the conformance suite.
+- The A2A subset, the internal-to-A2A state projection and the Agent Card generator
+  ([a2a.md](a2a.md)), checked against types generated from the pinned specification.
 
 **Exit:** `bun test src` green, including L7, C1, C2, C8 and the hash-chain part
 of G5. The negative config cases and state-machine reachability checks prototyped
@@ -73,8 +75,10 @@ schema.
   the stream.
 - Routes with `describeRoute()`, the OpenAPI snapshot, route-access tests, plan
   gating for writes.
+- The Agent Card for every active agent and the A2A endpoint (`SendMessage`, `GetTask`,
+  `ListTasks`, `CancelTask`) under `/a2a`, as a protocol adapter.
 
-**Exit:** L1 to L8 and C3 to C7 pass; `pnpm api:snapshot` committed and
+**Exit:** L1 to L8, C3 to C7 and X2 to X6, X8, X10 pass; `pnpm api:snapshot` committed and
 `pnpm api:lint` clean without raising the baseline.
 
 ### M4 Execution
@@ -93,8 +97,10 @@ step on its own.
 - Approvals, taint, tier resolution from MCP annotations, organization policy
   enforcement, memory scopes and proposals, secret-shape checks, the kill switch,
   second-activator rule.
+- The outbound A2A client and the remote agent registry, built and tested but off in
+  the pilot.
 
-**Exit:** A1 to A9, P1 to P6, G1, G2, G6 and G7 pass; J3, J4 and J5 green as
+**Exit:** A1 to A9, P1 to P6, G1, G2, G6, G7, X7 and X9 pass; J3, J4 and J5 green as
 specs.
 
 ### M6 Surfaces and observability
@@ -103,6 +109,8 @@ specs.
   sidebar row and marker, agents list, consent card, task timeline, agent detail,
   editor with validation and version compare, activity, kill switch, palette
   entry, control registrations, `en` strings.
+- The agent builder described in [ui.md](ui.md) (Configure and Preview, requests it
+  handles, example requests) and `SubscribeToTask` over server-sent events.
 - Rollups, metrics, logs, traces, the alert rules, the Den dashboard monitor and
   a Grafana dashboard under `infra/`.
 - The local pilot stack: a headless-runner image (`packaging/docker/Dockerfile.headless-runner`)
@@ -117,7 +125,8 @@ to the pull requests; `.warden/skills/design-spec-review` run locally.
 
 - Nightly fault injection; the load and soak runs; the red-team fixtures; a
   Warden security review; a tabletop run of runbooks RB1 to RB10 and the incident
-  procedure; ledger anchor export.
+  procedure; ledger anchor export; A2A interoperability against an official SDK client
+  and a reference agent (X1 to X10).
 
 **Exit:** the test plan's exit criteria, all recorded.
 
@@ -206,6 +215,8 @@ default that turns out wrong changes the named document.
 | 7 | Scale | Pilot: 10 agents, 5 concurrent attempts, 1,000 tasks a day. Design: 100, 50, 100,000 | Real numbers |
 | 8 | Dependencies | Reuse MySQL, the MCP gateway, the AI Gateway and OpenTelemetry. Secrets from the platform manager | Any requirement for an external key service, a SIEM or write-once export, and the paging channel |
 | 9 | Decisions D6, D9, D10, D11 | As proposed in the README | Maintainer and product confirmation |
+| 10 | A2A details ([a2a.md](a2a.md), "Open items") | HTTP+JSON binding, internal exposure only, no remote agents in the pilot | Binding confirmed by an interop test, the extension namespace, whether cards may be shared outside the organization, and where card signing keys live |
+| 11 | Which tree the code is built in (D17) | The original layout; the Replit workspace stays a preview | Confirmation that the fork's `dev` should keep the Replit layout, or return to the original one |
 
 ## The brief's artefacts
 

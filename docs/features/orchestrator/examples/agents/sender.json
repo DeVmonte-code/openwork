@@ -21,6 +21,19 @@
     ],
     "orchestrator": ["report_status", "request_approval"]
   },
+  "a2a": {
+    "exposure": "internal",
+    "skills": [
+      {
+        "id": "send-reply",
+        "name": "Send an approved reply",
+        "description": "Sends one reply after a person approves it, and confirms it went out exactly once.",
+        "tags": ["send", "approval-required"],
+        "examples": ["Send the approved reply for request r1"],
+        "taskType": "reply.send.requested"
+      }
+    ]
+  },
   "permissions": {
     "inputTrust": "trusted",
     "approvals": {

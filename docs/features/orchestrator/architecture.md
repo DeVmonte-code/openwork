@@ -44,7 +44,8 @@ processes bounded by tick cadence.
 
 ### Delegation and completion
 
-- An agent delegates with `delegate_task` (see [messaging.md](messaging.md)). The
+- An agent delegates with `delegate_task` (see [messaging.md](messaging.md)); at the agent's edge
+  that is an A2A `SendMessage` (see [a2a.md](a2a.md)). The
   child is a new task with `parentTaskId`, the same `correlationId`, `hop + 1`,
   and the sender appended to `path`.
 - `await: false` hands off and carries on. `await: true` parks the sender in
@@ -56,6 +57,14 @@ processes bounded by tick cadence.
   `succeeded` only if all of them are.
 - Status updates and clarification questions are messages on the task's thread.
   People see them live.
+
+### Discovery
+
+The registry of active agents is the set of their **Agent Cards**, generated from
+each agent's active configuration ([a2a.md](a2a.md)). The card says who the agent is,
+what it can be asked (its skills, each tied to a task type it accepts), and how to
+reach it. The Orchestrator tab lists them, and routing by role or capability reads the
+same data.
 
 ## 2. System context
 
@@ -192,7 +201,6 @@ stateDiagram-v2
   waiting_approval --> failed: rejected
   waiting_input --> queued: answered
   waiting_children --> queued: children finished
-  dead_lettered --> queued: operator requeues
   succeeded --> [*]
   failed --> [*]
 ```
@@ -206,6 +214,10 @@ worker; resuming is a new attempt that starts from the latest checkpoint.
 helps and no human action is implied unless an escalation rule says so.
 `dead_lettered` means the system gave up after retryable failures, a poison
 task, or a loop-guard trip, and it needs a person.
+
+A finished task is never reopened. The A2A protocol does not allow a message to a
+finished task, and a record that can go back to running is harder to audit. Retrying
+work creates a new task (see "Dead letters" below).
 
 ## 7. Durable queue
 
@@ -295,9 +307,10 @@ An attempt's timeout is the smaller of `limits.maxRuntimeMs` and the time left.
 A task is dead-lettered on exhausted attempts, a poison pattern, or a loop-guard
 trip. It stays visible with its reason and every attempt's error. Operators can:
 
-- **Requeue** with a fresh attempt budget, optionally editing the payload. An
-  edit creates a new task that `supersedes` the old one, so history is not
-  rewritten.
+- **Requeue** creates a new task with a fresh attempt budget, carrying the same type
+  and payload unless the operator edits it. The new task `supersedes` the dead letter
+  and references it (`referenceTaskIds` in A2A terms). The dead letter stays as the
+  record; nothing is rewritten.
 - **Reassign** to another agent.
 - **Discard**, which records a reason.
 

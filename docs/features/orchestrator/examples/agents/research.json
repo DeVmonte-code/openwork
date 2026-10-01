@@ -22,6 +22,19 @@
     ],
     "orchestrator": ["report_status", "ask_clarification", "delegate_task", "memory_read"]
   },
+  "a2a": {
+    "exposure": "internal",
+    "skills": [
+      {
+        "id": "research-request",
+        "name": "Research a request",
+        "description": "Gathers the facts needed to answer one inbound request and returns cited findings.",
+        "tags": ["research", "support"],
+        "examples": ["Find what we know about request r1 and cite the playbook entries you used"],
+        "taskType": "research.requested"
+      }
+    ]
+  },
   "permissions": {"inputTrust": "untrusted", "delegateTo": ["drafter"]},
   "memory": {"read": ["task", "org"], "write": ["task"], "orgNamespaces": ["playbooks"]},
   "limits": {

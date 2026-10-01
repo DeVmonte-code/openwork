@@ -18,6 +18,17 @@ Status: proposal. Part of [the orchestrator plan](README.md). Covers brief step 
   orchestrator wraps message bodies as quoted data when it builds a model
   context. Nothing in a body can change the receiver's configuration.
 
+## Relationship to A2A
+
+At the edge of every agent these messages are presented as A2A messages, tasks and
+artifacts, and a message from another A2A agent arrives as one of them. The types
+below stay because they carry what A2A does not: hop count, path, taint, sequence
+number and idempotency keys. [a2a.md](a2a.md) has the full mapping, the A2A state each
+task state projects to, and the rules about identity and idempotency. The short form:
+a delegation is a `SendMessage`, a question is `INPUT_REQUIRED`, an approval wait is
+`AUTH_REQUIRED`, a result is an artifact on a `COMPLETED` task, and a finished task is
+never reopened.
+
 ## Message types
 
 | Type | Sent by | Purpose | Effect on tasks |
