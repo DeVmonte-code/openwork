@@ -413,7 +413,7 @@ export function SessionRoute() {
   const location = useLocation();
   const appsRouteActive = /^(?:\/apps|\/dashboard\/apps)(?:\/|$)/.test(location.pathname);
   const automationsRouteRequested = /^\/automations(?:\/|$)/.test(location.pathname);
-  const orchestratorRouteRequested = location.pathname === "/orchestrator";
+  const orchestratorRouteRequested = /^\/orchestrator(?:\/hierarchy)?$/.test(location.pathname);
   const dashboardRouteRequested = /^\/dashboard(?:\/|$)/.test(location.pathname);
   const activityRouteRequested = location.pathname === "/activity";
   const {

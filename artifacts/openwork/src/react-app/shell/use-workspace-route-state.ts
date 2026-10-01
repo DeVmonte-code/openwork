@@ -191,7 +191,7 @@ export function useWorkspaceRouteState(input: UseWorkspaceRouteStateInput) {
       return;
     }
     if (workspaceRoute === "orchestrator") {
-      if (location.pathname === "/orchestrator") return;
+      if (/^\/orchestrator(?:\/hierarchy)?$/.test(location.pathname)) return;
       navigate("/orchestrator", options);
       return;
     }

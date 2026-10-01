@@ -528,6 +528,14 @@ export function AppRoot() {
                   </DevProfiler>
                 }
               />
+              <Route
+                path="/orchestrator/hierarchy"
+                element={
+                  <DevProfiler id="OrchestratorHierarchyRoute">
+                    <SessionRoute />
+                  </DevProfiler>
+                }
+              />
               <Route path="/activity" element={<DevProfiler id="ActivityRoute"><SessionRoute /></DevProfiler>} />
               <Route path="/apps" element={<DevProfiler id="AppsRoute"><SessionRoute /></DevProfiler>} />
               <Route path="/dashboard/apps/:appId" element={<DevProfiler id="DashboardAppRoute"><SessionRoute /></DevProfiler>} />

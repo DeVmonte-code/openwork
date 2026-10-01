@@ -1,12 +1,13 @@
 /** @jsxImportSource react */
 import { useEffect, useState } from "react";
 import { LockIcon, PauseIcon, PlayIcon } from "lucide-react";
-import { useSearchParams } from "react-router";
+import { NavLink, useLocation, useSearchParams } from "react-router";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/sonner";
 import { t } from "@/i18n";
+import { HierarchyView } from "./hierarchy-view";
 import { orchestratorPreview, useOrchestratorPreview, type AgentId } from "./orchestrator-preview";
 
 export type OrchestratorPreviewState = "default" | "empty" | "locked";
@@ -18,6 +19,7 @@ const AGENTS: Array<{ id: AgentId; name: string; cost: string }> = [
   { id: "reviewer", name: "orchestrator.agent_reviewer", cost: "$0.12" },
   { id: "sender", name: "orchestrator.agent_sender", cost: "$0.02" },
   { id: "digest", name: "orchestrator.agent_digest", cost: "$0.05" },
+  { id: "coordinator", name: "orchestrator.agent_coordinator", cost: "$0.00" },
 ];
 const STARTS = ["dispatcher", "worker", "reviewer", "executor", "monitor"];
 
@@ -31,6 +33,7 @@ function describe(id: AgentId, approvalWaiting: boolean): { activity: string; qu
       ? { activity: t("orchestrator.activity_waiting"), queue: t("orchestrator.queued_one") }
       : { activity: t("orchestrator.activity_idle"), queue: t("orchestrator.queued_zero") };
     case "digest": return { activity: t("orchestrator.activity_digest"), queue: null };
+    case "coordinator": return { activity: t("orchestrator.activity_idle"), queue: t("orchestrator.queued_zero") };
   }
 }
 
@@ -42,6 +45,8 @@ function parseState(search: string): OrchestratorPreviewState {
 export function OrchestratorPage({ previewState }: { previewState?: OrchestratorPreviewState }) {
   const [search] = useSearchParams();
   const state = previewState ?? parseState(search.toString());
+  const { pathname, search: rawSearch } = useLocation();
+  const isHierarchy = /\/orchestrator\/hierarchy\/?$/.test(pathname);
   const snap = useOrchestratorPreview();
   const [loading, setLoading] = useState(true);
   useEffect(() => { const id = window.setTimeout(() => setLoading(false), 450); return () => window.clearTimeout(id); }, []);
@@ -65,8 +70,25 @@ export function OrchestratorPage({ previewState }: { previewState?: Orchestrator
     </div>
   );
 
+  const base = pathname.replace(/\/hierarchy\/?$/, "").replace(/\/$/, "");
+  const nav = (
+    <nav aria-label={t("orchestrator.nav_label")} className="flex gap-1">
+      {[{ to: base, label: t("orchestrator.nav_agents"), end: true }, { to: `${base}/hierarchy`, label: t("orchestrator.nav_hierarchy"), end: true }].map((n) => (
+        <Button
+          key={n.to} variant="ghost" size="sm" nativeButton={false}
+          className="aria-[current=page]:bg-secondary aria-[current=page]:text-foreground"
+          render={<NavLink to={{ pathname: n.to, search: rawSearch }} end={n.end} />}
+        >
+          {n.label}
+        </Button>
+      ))}
+    </nav>
+  );
+
   let body;
-  if (state === "empty") {
+  if (isHierarchy) {
+    body = <HierarchyView state={state} loading={loading} />;
+  } else if (state === "empty") {
     body = (
       <section aria-labelledby="orch-empty" className="flex flex-col gap-3">
         <h2 id="orch-empty" className="text-sm font-medium">{t("orchestrator.empty_title")}</h2>
@@ -143,9 +165,10 @@ export function OrchestratorPage({ previewState }: { previewState?: Orchestrator
 
   return (
     <section data-orchestrator-page aria-label={t("orchestrator.title")} className="h-full min-h-0 overflow-y-auto">
-      <div className="mx-auto flex w-full max-w-198 flex-col gap-5 px-4 pb-12 pt-12 lg:pt-32">
+      <div className={`mx-auto flex w-full ${isHierarchy ? "max-w-300" : "max-w-198"} flex-col gap-5 px-4 pb-12 pt-12 lg:pt-32`}>
         {heading}
-        {locked ? (
+        {nav}
+        {locked && !isHierarchy ? (
           <p className="flex items-center gap-2 text-sm text-muted-foreground" role="status">
             <LockIcon className="size-4 shrink-0" aria-hidden="true" />
             <span>{t("orchestrator.locked_line")} · {t("orchestrator.locked_ask")}</span>
