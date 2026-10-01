@@ -43,6 +43,12 @@ function addAgent(hierarchy: Hierarchy, id: string, state: HierarchyAgent["state
   return { ...hierarchy, agents: [...hierarchy.agents, { id, nameKey: id, state }] };
 }
 
+function setAgentState(hierarchy: Hierarchy, id: string, state: HierarchyAgent["state"]): void {
+  const agent = hierarchy.agents.find((item) => item.id === id);
+  if (!agent) throw new Error(`Missing test agent: ${id}`);
+  agent.state = state;
+}
+
 function addRelationship(
   hierarchy: Hierarchy,
   managerId: string,
@@ -175,7 +181,7 @@ describe("hierarchy validation", () => {
 
   test("warns live when the proposed manager is paused and the agent relies on it at Moderate or above", () => {
     const hierarchy = createSampleHierarchy();
-    hierarchy.agents.find((agent) => agent.id === ids.reviewer)!.state = "paused";
+    setAgentState(hierarchy, ids.reviewer, "paused");
 
     const issues = validateChangeManager(hierarchy, input(ids.research, ids.reviewer, {
       control: 3,
@@ -194,8 +200,8 @@ describe("hierarchy validation", () => {
 
   test("includes draft agents in paused-manager dependency warnings", () => {
     const hierarchy = createSampleHierarchy();
-    hierarchy.agents.find((agent) => agent.id === ids.reviewer)!.state = "paused";
-    hierarchy.agents.find((agent) => agent.id === ids.drafter)!.state = "draft";
+    setAgentState(hierarchy, ids.reviewer, "paused");
+    setAgentState(hierarchy, ids.drafter, "draft");
 
     expect(listExceptions(hierarchy)).toContainEqual(expect.objectContaining({
       severity: "warning",
@@ -240,5 +246,41 @@ describe("hierarchy validation", () => {
 
     expect(issues).toContainEqual(expect.objectContaining({ severity: "warning", code: "without_manager", agentId: "orphan" }));
     expect(issues).toContainEqual(expect.objectContaining({ severity: "warning", code: "paused_manager", agentId: ids.drafter }));
+  });
+
+  test("allows unassigned drafts but warns for running, paused and stopped agents without a manager", () => {
+    let hierarchy = createSampleHierarchy();
+    hierarchy = addAgent(hierarchy, "draft-orphan", "draft");
+    hierarchy = addAgent(hierarchy, "running-orphan", "running");
+    hierarchy = addAgent(hierarchy, "paused-orphan", "paused");
+    hierarchy = addAgent(hierarchy, "stopped-orphan", "stopped");
+    hierarchy = addAgent(hierarchy, "retired-orphan", "retired");
+
+    expect(listExceptions(hierarchy).filter((item) => item.code === "without_manager")
+      .map((item) => item.agentId)).toEqual(["running-orphan", "paused-orphan", "stopped-orphan"]);
+  });
+
+  test("orders warnings before information, then missing manager, paused dependency and over-limit warnings stably", () => {
+    let hierarchy = createSampleHierarchy();
+    hierarchy.spanLimit = 4;
+    setAgentState(hierarchy, ids.reviewer, "paused");
+    const research = getRelationship(hierarchy, ids.research);
+    if (!research) throw new Error("Missing test relationship for Research");
+    research.control = 1;
+    research.reliance = 4;
+    hierarchy = addAgent(hierarchy, "first-orphan");
+    hierarchy = addAgent(hierarchy, "second-orphan", "paused");
+
+    const expected = [
+      ["warning", "without_manager", "first-orphan"],
+      ["warning", "without_manager", "second-orphan"],
+      ["warning", "paused_manager", ids.drafter],
+      ["warning", "over_limit", ids.coordinator],
+      ["info", "level_gap", ids.research],
+    ];
+    const summarize = () => listExceptions(hierarchy)
+      .map((item) => [item.severity, item.code, item.agentId]);
+    expect(summarize()).toEqual(expected);
+    expect(summarize()).toEqual(expected);
   });
 });

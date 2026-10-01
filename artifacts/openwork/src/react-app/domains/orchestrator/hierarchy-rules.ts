@@ -1,4 +1,4 @@
-export type HierarchyAgentState = "running" | "paused" | "draft" | "retired";
+export type HierarchyAgentState = "running" | "paused" | "stopped" | "draft" | "retired";
 
 export type HierarchyAgent = {
   id: string;
@@ -76,7 +76,7 @@ const findAgent = (hierarchy: Hierarchy, agentId: string) =>
   hierarchy.agents.find((agent) => agent.id === agentId);
 
 function hasLiveSpanState(agent: HierarchyAgent | undefined): boolean {
-  return agent?.state === "running" || agent?.state === "paused";
+  return agent !== undefined && agent.state !== "draft" && agent.state !== "retired";
 }
 
 export function directReports(hierarchy: Hierarchy, managerId: string): HierarchyAgent[] {
@@ -181,7 +181,6 @@ function changeValidation(
   hierarchy: Hierarchy,
   input: ChangeManagerInput,
   ignoredRelationshipId?: string,
-  hasCurrentManager = false,
 ): HierarchyIssue[] {
   const agent = findAgent(hierarchy, input.agentId);
   const manager = findAgent(hierarchy, input.managerId);
@@ -193,11 +192,6 @@ function changeValidation(
 
   if (input.agentId === input.managerId) {
     issues.push(issue("refusal", "self_report", input.agentId, { managerId: input.managerId }));
-    return issues;
-  }
-
-  if (hasCurrentManager && !ignoredRelationshipId) {
-    issues.push(issue("refusal", "duplicate", input.agentId, { managerId: input.managerId }));
     return issues;
   }
 
@@ -351,7 +345,7 @@ export function retireAgent(
 export function listExceptions(hierarchy: Hierarchy): HierarchyIssue[] {
   const issues: HierarchyIssue[] = [];
   for (const agent of hierarchy.agents) {
-    if (agent.id === hierarchy.topId || agent.state === "retired") continue;
+    if (agent.id === hierarchy.topId || agent.state === "draft" || agent.state === "retired") continue;
     if (!getRelationship(hierarchy, agent.id)) {
       issues.push(issue("warning", "without_manager", agent.id));
     }
@@ -387,5 +381,16 @@ export function listExceptions(hierarchy: Hierarchy): HierarchyIssue[] {
       }));
     }
   }
-  return issues;
+  // Stable sorting keeps source order within each warning category.
+  const priority = (item: HierarchyIssue): number => {
+    if (item.severity === "refusal") return 0;
+    if (item.severity === "info") return 5;
+    switch (item.code) {
+      case "without_manager": return 1;
+      case "paused_manager": return 2;
+      case "over_limit": return 3;
+      default: return 4;
+    }
+  };
+  return issues.sort((left, right) => priority(left) - priority(right));
 }

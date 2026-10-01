@@ -26,9 +26,24 @@ export type ManagerChangeUndoResult = {
 };
 
 function agentRunStates(hierarchy: Hierarchy): Readonly<Record<AgentId, AgentRunState>> {
-  return Object.fromEntries(
-    hierarchy.agents.map((agent) => [agent.id, agent.state === "paused" ? "paused" : "running"]),
-  ) as Record<AgentId, AgentRunState>;
+  const runState = (id: AgentId): AgentRunState => {
+    const agent = hierarchy.agents.find((candidate) => candidate.id === id);
+    if (!agent) throw new Error(`The Orchestrator sample is missing agent "${id}".`);
+    if (agent.state !== "running" && agent.state !== "paused") {
+      throw new Error(`Agent "${id}" does not have a running or paused state.`);
+    }
+    return agent.state;
+  };
+
+  return {
+    coordinator: runState("coordinator"),
+    intake: runState("intake"),
+    research: runState("research"),
+    drafter: runState("drafter"),
+    reviewer: runState("reviewer"),
+    sender: runState("sender"),
+    digest: runState("digest"),
+  };
 }
 
 const initialHierarchy = createSampleHierarchy();

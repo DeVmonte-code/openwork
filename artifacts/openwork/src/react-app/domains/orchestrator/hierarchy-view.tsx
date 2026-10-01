@@ -309,7 +309,7 @@ function Panel({ h, id, locked, onChange }: { h: Hierarchy; id: string | null; l
 
 export function HierarchyView({ state, loading }: { state: PreviewState; loading: boolean }) {
   const snap = useOrchestratorPreview();
-  const h = snap.hierarchy as Hierarchy;
+  const h = snap.hierarchy;
   const locked = state === "locked";
   const [selected, setSelected] = useState<string | null>(null);
   const [changing, setChanging] = useState<string | null>(null);

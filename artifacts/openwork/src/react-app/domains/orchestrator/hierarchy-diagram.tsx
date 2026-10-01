@@ -39,8 +39,9 @@ export function Diagram({ h, selected, onSelect }: { h: Hierarchy; selected: str
         <div className="relative mx-auto" style={{ width: layout.width, height: layout.height }} role="group" aria-label={t("orchestrator.h_diagram_label")}>
           <svg className="pointer-events-none absolute inset-0 text-muted-foreground" width={layout.width} height={layout.height} aria-hidden="true">
             {edges.map((r) => {
-              const p = layout.pos.get(r.managerId)!;
-              const c = layout.pos.get(r.agentId)!;
+              const p = layout.pos.get(r.managerId);
+              const c = layout.pos.get(r.agentId);
+              if (!p || !c) return null;
               const x1 = p.x + NW / 2, y1 = p.y + NH, x2 = c.x + NW / 2, y2 = c.y;
               const my = y1 + GY / 2;
               const line = (dx: number, w: number, dash?: string) => (
@@ -50,8 +51,9 @@ export function Diagram({ h, selected, onSelect }: { h: Hierarchy; selected: str
             })}
           </svg>
           {edges.map((r) => {
-            const parent = layout.pos.get(r.managerId)!;
-            const child = layout.pos.get(r.agentId)!;
+            const parent = layout.pos.get(r.managerId);
+            const child = layout.pos.get(r.agentId);
+            if (!parent || !child) return null;
             return (
               <div
                 key={`levels-${r.id}`}
@@ -68,7 +70,8 @@ export function Diagram({ h, selected, onSelect }: { h: Hierarchy; selected: str
             );
           })}
           {h.agents.filter((a) => layout.pos.has(a.id)).map((a) => {
-            const p = layout.pos.get(a.id)!;
+            const p = layout.pos.get(a.id);
+            if (!p) return null;
             const rel = getRelationship(h, a.id);
             const label = rel
               ? t("orchestrator.h_edge", { agent: name(a.id), manager: name(rel.managerId), control: levelName(rel.control), reliance: levelName(rel.reliance) })

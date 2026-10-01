@@ -40,7 +40,7 @@ createRoot(document.getElementById('root')).render(
 });
 
 test.beforeEach(async ({ page }) => {
-  const seen = { errors: [] as string[], dataRequests: [] as string[] };
+  const seen: Diagnostics = { errors: [], dataRequests: [] };
   diagnostics.set(page, seen);
   page.on("pageerror", (error) => seen.errors.push(error.message));
   page.on("request", (request) => {
@@ -126,9 +126,16 @@ test("isolated component preview: tree rows, both-direction details, and query-p
     await expect(page.getByRole("button", { name: `Show details: ${name}`, exact: true })).toBeVisible();
   }
   await expect(page.getByText("Manages 5 of 7", { exact: true })).toBeVisible();
-  expect(await page.getByRole("listitem").filter({ hasText: "Operations coordinator" }).first().boundingBox())
+  expect(await treeRow(page, "Operations coordinator").boundingBox())
     .toMatchObject({ height: 44 });
   await page.screenshot({ path: testInfo.outputPath("hierarchy-tree.png"), fullPage: true });
+
+  await page.getByRole("navigation", { name: "Orchestrator views" }).getByRole("button", { name: "Agents", exact: true }).click();
+  const agentRows = page.locator('section[aria-labelledby="orch-agents"] > ul > li');
+  await expect(agentRows.first()).toContainText("Operations coordinator");
+  await expect(agentRows.nth(1)).toContainText("Intake");
+  await page.getByRole("navigation", { name: "Orchestrator views" }).getByRole("button", { name: "Hierarchy", exact: true }).click();
+  await page.getByRole("tab", { name: "Tree", exact: true }).click();
 
   await page.getByRole("button", { name: "Show details: Reviewer", exact: true }).click();
   const panel = page.locator("aside");
@@ -172,7 +179,10 @@ test("isolated component preview: linked drafts keep their manager, do not count
   const reviewerPosition = await reviewerButton.boundingBox();
   expect(draftPosition).not.toBeNull();
   expect(reviewerPosition).not.toBeNull();
-  expect(draftPosition!.x).toBeGreaterThan(reviewerPosition!.x + 10);
+  if (!draftPosition || !reviewerPosition) {
+    throw new Error("Expected the draft agent and Reviewer to be visible in the tree.");
+  }
+  expect(draftPosition.x).toBeGreaterThan(reviewerPosition.x + 10);
   await expect(page.getByRole("heading", { name: "Without a manager" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Show details: Monitor", exact: true })).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("hierarchy-draft-and-orphans.png"), fullPage: true });
@@ -265,7 +275,10 @@ test("isolated component preview: refuses self-management and reporting loops be
 
   await changeButton(page, "Operations coordinator").click();
   await expect(page.getByRole("dialog", { name: "Change manager: Operations coordinator" })).toBeVisible();
-  await expect(page.getByRole("alert")).toContainText("Operations coordinator cannot report to itself.");
+  const refusalAlert = page.getByRole("alert");
+  await expect(refusalAlert).toContainText("Operations coordinator cannot report to itself.");
+  await expect(refusalAlert).toHaveClass(/text-muted-foreground/);
+  await expect(refusalAlert).not.toHaveClass(/text-destructive/);
   await expect(page.getByRole("button", { name: "Change manager", exact: true })).toBeDisabled();
   await page.screenshot({ path: testInfo.outputPath("hierarchy-refusal-self.png"), fullPage: true });
   await page.getByRole("button", { name: "Cancel", exact: true }).click();
@@ -276,6 +289,8 @@ test("isolated component preview: refuses self-management and reporting loops be
   await expect(page.getByRole("alert")).toContainText(
     "This would create a reporting loop: Reviewer → Drafter → Reviewer.",
   );
+  await expect(page.getByRole("alert")).toHaveClass(/text-muted-foreground/);
+  await expect(page.getByRole("alert")).not.toHaveClass(/text-destructive/);
   await expect(page.getByRole("button", { name: "Change manager", exact: true })).toBeDisabled();
   await page.screenshot({ path: testInfo.outputPath("hierarchy-refusal-loop.png"), fullPage: true });
 });
@@ -324,9 +339,9 @@ test("isolated component preview: loading, empty and locked states retain labele
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.addInitScript(() => {
     const nativeTimeout = window.setTimeout.bind(window);
-    window.setTimeout = ((callback: TimerHandler, delay?: number, ...args: unknown[]) => {
+    window.setTimeout = (callback, delay, ...args) => {
       return nativeTimeout(callback, delay === 450 ? 2500 : delay, ...args);
-    }) as typeof window.setTimeout;
+    };
   });
   await page.goto(`${origin}/orchestrator/hierarchy`);
   const skeleton = page.getByRole("list", { name: "Hierarchy is loading" });

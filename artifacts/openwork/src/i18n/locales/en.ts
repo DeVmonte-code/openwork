@@ -2484,6 +2484,7 @@ export default {
   "orchestrator.today_cost": "today",
   "orchestrator.state_running": "Running",
   "orchestrator.state_paused": "Paused",
+  "orchestrator.state_stopped": "Stopped",
   "orchestrator.pause_agent": "Pause agent",
   "orchestrator.resume_agent": "Resume agent",
   "orchestrator.toast_paused": "Agent paused",

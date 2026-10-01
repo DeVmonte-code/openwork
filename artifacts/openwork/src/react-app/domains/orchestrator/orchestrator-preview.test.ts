@@ -6,12 +6,22 @@ declare const expect: (value: unknown) => {
   toHaveLength: (expected: number) => void;
 };
 
-import { orchestratorPreview } from "./orchestrator-preview";
+import { orchestratorPreview, type AgentId } from "./orchestrator-preview";
+
+function isAgentId(id: string): id is AgentId {
+  return id === "coordinator"
+    || id === "intake"
+    || id === "research"
+    || id === "drafter"
+    || id === "reviewer"
+    || id === "sender"
+    || id === "digest";
+}
 
 afterEach(() => {
   for (const agent of orchestratorPreview.getSnapshot().hierarchy.agents) {
-    if (agent.state === "paused") {
-      orchestratorPreview.setAgentState(agent.id as "digest" | "intake" | "research" | "drafter" | "reviewer" | "sender" | "coordinator", "running");
+    if (agent.state === "paused" && isAgentId(agent.id)) {
+      orchestratorPreview.setAgentState(agent.id, "running");
     }
   }
 });

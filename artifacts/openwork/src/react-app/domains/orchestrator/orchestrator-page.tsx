@@ -13,13 +13,13 @@ import { orchestratorPreview, useOrchestratorPreview, type AgentId } from "./orc
 export type OrchestratorPreviewState = "default" | "empty" | "locked";
 
 const AGENTS: Array<{ id: AgentId; name: string; cost: string }> = [
+  { id: "coordinator", name: "orchestrator.agent_coordinator", cost: "$0.00" },
   { id: "intake", name: "orchestrator.agent_intake", cost: "$0.42" },
   { id: "research", name: "orchestrator.agent_research", cost: "$1.10" },
   { id: "drafter", name: "orchestrator.agent_drafter", cost: "$0.31" },
   { id: "reviewer", name: "orchestrator.agent_reviewer", cost: "$0.12" },
   { id: "sender", name: "orchestrator.agent_sender", cost: "$0.02" },
   { id: "digest", name: "orchestrator.agent_digest", cost: "$0.05" },
-  { id: "coordinator", name: "orchestrator.agent_coordinator", cost: "$0.00" },
 ];
 const STARTS = ["dispatcher", "worker", "reviewer", "executor", "monitor"];
 
