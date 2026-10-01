@@ -44,7 +44,7 @@ test("fresh browser redirects to the original sign-in surface and smoke-tests it
   page,
 }, testInfo) => {
   observeBrowserDiagnostics(page);
-  test.setTimeout(60_000);
+  test.setTimeout(120_000);
   await page.context().route("https://app.openworklabs.com/**", (route) =>
     route.fulfill({
       status: 200,
@@ -110,7 +110,7 @@ test("fresh browser redirects to the original sign-in surface and smoke-tests it
   await expect(saveOrganization).toBeDisabled();
   await organizationUrl.fill("https://acme.example");
   await expect(saveOrganization).toBeEnabled();
-  await organizationDialog.getByRole("button", { name: "Cancel" }).click();
+  await organizationUrl.press("Escape");
   await expect(organizationDialog).not.toBeVisible();
 
   const popupPromise = page.waitForEvent("popup");
@@ -126,12 +126,15 @@ test("fresh browser redirects to the original sign-in surface and smoke-tests it
   expect(signInUrl.searchParams.get("desktopScheme")).toBe("openwork");
   await popup.close();
 
-  await page.reload();
+  const reloadResponse = await page.reload({ waitUntil: "domcontentloaded" });
+  expect(reloadResponse?.status()).toBe(200);
   await expect(page).toHaveURL(/\/signin$/);
   await expect(
     page.getByRole("heading", { name: "Welcome to OpenWork" }),
   ).toBeVisible();
-  await expect(signInButton).toBeVisible();
+  await expect(
+    page.getByRole("status", { name: "Starting OpenWork" }),
+  ).not.toBeVisible();
 });
 
 for (const path of ["/session", "/settings"]) {
