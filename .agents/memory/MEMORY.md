@@ -1,0 +1,1 @@
+- [Import target selection](import-target-selection.md) — imports can contain several separate Vercel apps; confirm the user's target before migrating one.

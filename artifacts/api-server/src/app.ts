@@ -3,6 +3,7 @@ import cors from "cors";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
+import { createDenProxy } from "./routes/den-proxy";
 
 const app: Express = express();
 
@@ -25,6 +26,9 @@ app.use(
     },
   }),
 );
+// Mount before body parsing to preserve the imported API's exact request bytes
+// and streaming responses. No permissive CORS headers on this private hop.
+app.use("/api/den", createDenProxy());
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

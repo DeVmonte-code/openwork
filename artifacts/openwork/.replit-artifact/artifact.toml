@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "OpenWork"
+description = "The imported OpenWork workspace app for chatting with agents, managing workspaces, and connecting tools."
+version = "1.0.0"
+id = "artifacts/openwork"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 20159
+
+[services.development]
+run = "pnpm --filter @workspace/openwork run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/openwork", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/openwork/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "20159"
+BASE_PATH = "/"
