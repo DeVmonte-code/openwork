@@ -3,6 +3,9 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
+    "local": "node scripts/local.mjs",
+    "test:local": "node --test scripts/local-config.test.mjs scripts/local-proxy.test.mjs scripts/local-windows-job.test.mjs",
+    "test:local:processes": "node --test scripts/local-runtime.test.mjs",
     "preinstall": "sh -c 'rm -f package-lock.json yarn.lock; case \"$npm_config_user_agent\" in pnpm/*) ;; *) echo \"Use pnpm instead\" >&2; exit 1 ;; esac'",
     "build": "pnpm run typecheck && pnpm -r --if-present run build",
     "typecheck:libs": "tsc --build",

@@ -9,6 +9,54 @@ OpenWork is the imported browser workspace for chatting with agents, managing se
 - `pnpm --filter @workspace/openwork run build` creates static production output; it requires workflow-equivalent `PORT` and `BASE_PATH`.
 - The original imported repository is retained under `.migration-backup/`.
 
+## Run locally
+
+Prerequisites: Node **22.12+** (Node 24 recommended; Vite also supports Node 20.19+) and **pnpm 10.26.1** (the verified release). The repository does not pin an exact Node or pnpm release; pnpm must support the v9 lockfile and workspace install policy. Use pnpm, not npm or Yarn.
+
+```text
+git clone <your-repository-url> openwork-local
+cd openwork-local
+pnpm install
+pnpm local
+```
+
+`pnpm local` builds and starts the API directly with Node, waits for `/api/healthz`, then starts Vite. No Replit path router is needed: the local Vite server forwards `/api` to the API without rewriting paths or parsing bodies. The fixed Den upstream and sign-in rules remain unchanged. No database or session secret is needed for this API proxy.
+
+Defaults are web port **5173** and API port **8788**. Occupied defaults advance to the next free port; the command prints the chosen ports and these addresses:
+
+- Web: `http://127.0.0.1:5173/`
+- Orchestrator: `http://127.0.0.1:5173/orchestrator`
+- Hierarchy: `http://127.0.0.1:5173/orchestrator/hierarchy`
+- Health through the web: `http://127.0.0.1:5173/api/healthz`
+
+Use the printed addresses if ports changed. Complete the existing hosted OpenWork sign-in, then paste its one-time code into the local OpenWork sign-in screen. Manual paste-code sign-in remains the default; no unsigned preview mode is provided.
+
+To choose ports on macOS/Linux:
+
+```sh
+LOCAL_WEB_PORT=5180 LOCAL_API_PORT=9000 pnpm local
+```
+
+On Windows PowerShell:
+
+```powershell
+$env:LOCAL_WEB_PORT = "5180"
+$env:LOCAL_API_PORT = "9000"
+pnpm local
+```
+
+Explicit port overrides fail with a message if occupied. Press **Ctrl+C** to stop both servers; either server exiting also stops the other. The Vite proxy is enabled only when `OPENWORK_LOCAL_API_URL` is set, which the runner supplies to its web child; do not set it for ordinary Replit workflows. `pnpm test:local` checks port/environment policy and raw/streaming proxy behavior.
+
+`pnpm test:local:processes` additionally checks real server startup, occupied defaults, interrupts, startup failure, and peer termination on Linux; it skips on other operating systems.
+
+Known limits:
+
+- Sign-in is required. Orchestrator and Hierarchy are in-memory **sample data**, not live agent orchestration; full chat needs an account and reachable worker.
+- The unchanged root `preinstall` uses `sh` and requires a Unix-compatible shell on Windows.
+- Windows process cleanup uses the bundled helper with built-in Windows PowerShell and kernel Job Objects on modern, Node-supported Windows. API and web code start only after ownership is established; failed helper setup stops startup rather than leaving unowned servers.
+- The unchanged workspace overrides omit many non-Linux-x64 native dependencies. Fresh macOS, Windows, or Linux ARM installs/builds may need a separate dependency-policy update. The runner is cross-platform, but that does not fix these existing installation restrictions.
+- Browser tests currently default to Replit's Chromium path. On another computer, supply `PLAYWRIGHT_CHROMIUM_EXECUTABLE` and `PLAYWRIGHT_BASE_URL` to use an installed Chromium and the local web address.
+
 ## Stack & Source
 
 - pnpm workspace, React 19.2, Vite, React Router, Tailwind v4.

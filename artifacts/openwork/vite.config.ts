@@ -20,6 +20,7 @@ if (Number.isNaN(port) || port <= 0) {
 }
 
 const basePath = process.env.BASE_PATH;
+const localApiUrl = process.env.OPENWORK_LOCAL_API_URL;
 
 if (!basePath) {
   throw new Error(
@@ -83,6 +84,17 @@ export default defineConfig({
     strictPort: true,
     host: '0.0.0.0',
     allowedHosts: true,
+    // Local development only. Keep /api intact for the API server's existing
+    // routes; Vite pipes raw requests/responses without parsing or buffering.
+    ...(localApiUrl ? {
+      proxy: {
+        '/api': {
+          target: localApiUrl,
+          changeOrigin: true,
+          ws: true,
+        },
+      },
+    } : {}),
     fs: {
       strict: true,
     },
