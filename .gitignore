@@ -1,84 +1,49 @@
-.turbo/
-node_modules/
-apps/desktop/dist-electron/
-apps/desktop/electron/generated/
-apps/desktop/.electron-runtime/
-apps/desktop/dist-electron-demo-a/
-apps/desktop/dist-electron-demo-b/
-packages/*/node_modules/
-apps/*/node_modules/
-ee/apps/*/node_modules/
-ee/packages/*/node_modules/
-.next/
-ee/apps/landing/.next-prod-eval/
-out/
-dist/
-packages/*/dist/
-apps/*/dist/
-ee/apps/*/dist/
-ee/packages/*/dist/
-ee/apps/gateway/models-site/models/api.json
-# Generated catalog left by pre-Gateway builds, not an active app path.
-ee/apps/inference/models-site/models/api.json
-tmp/
-coverage/
-evals/results/flake/
+# See https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
 
-# Local git worktrees
-_worktrees/
-.worktrees/
+# compiled output
+dist
+tmp
+out-tsc
+*.tsbuildinfo
+.expo
+.expo-shared
 
-# Desktop sidecars
-apps/desktop/resources/sidecars/
-apps/desktop/server/
+# dependencies
+node_modules
 
-# Env
-.env
-.env.*
-!.env.example
-# Committed local-dev defaults (throwaway secrets) loaded by scripts/dev-local.mjs.
-!.env.dev
-# The migration-release fragment is committed only on the tagged
-# migration-release commit and removed by 03-post-migration-cleanup.mjs.
-# Allow git to see it so `cut-migration-release` can commit it.
-!.env.migration-release
+# IDEs and editors
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
 
-# Bun build artifacts
-*.bun-build
-apps/server/cli
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
 
-# pnpm store (created by Docker volume mounts)
-.pnpm-store/
+# misc
+/.sass-cache
+/connect.lock
+/coverage
+/libpeerconnection.log
+npm-debug.log
+yarn-error.log
+testem.log
+/typings
 
-# Docker dev workspace (ephemeral mount point)
-packaging/docker/workspace/
-
-# OS
+# System Files
 .DS_Store
+Thumbs.db
 
-# OpenCode mirror
-vendor/opencode/
+.cursor/rules/nx-rules.mdc
+.github/instructions/nx.instructions.md
 
-# OpenCode local deps
-.opencode/node_modules/
-.opencode/bun.lock
-
-# OpenWork workspace-local artifacts
-.opencode/openwork/
-.opencode/agents/openwork.md
-.opencode/openwork.json
-opencode.jsonc
-.vercel
-.env*.local
-.claude/*
-.security
-transcript-analysis
-# Eval runner output
-evals/results/
-# DocShot review receipts are capture evidence, tied to the source commit.
-*.png.review.json
-.playwright-mcp/
-.vscode/
-
-# Warden local run logs
-.warden/logs/
+# Replit
+.cache/
+.local/

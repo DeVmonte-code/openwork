@@ -1,135 +1,162 @@
-minimumReleaseAge: 4320
+# ============================================================================
+# SECURITY: Minimum release age for npm packages (supply-chain attack defense)
+# ============================================================================
+#
+# This setting requires that any npm package version must have been published
+# for at least 1 day (1440 minutes) before pnpm will allow installing it.
+# This is a critical defense against supply-chain attacks. In most cases,
+# malicious npm releases are discovered and pulled within hours, so a 1-day
+# delay provides a strong safety buffer.
+#
+# DO NOT DISABLE THIS SETTING. Removing or setting it to 0 is considered
+# extremely dangerous and leaves the entire workspace vulnerable to supply-
+# chain attacks, which have been the #1 vector for npm ecosystem compromises.
+#
+# If you absolutely need to install a package before the 1-day window has
+# passed (e.g. an urgent security bugfix), you can add it to the
+# `minimumReleaseAgeExclude` allowlist below. Only consider doing this for
+# packages released by trusted organizations with an impeccable security
+# posture (e.g. Replit packsges, react from Meta, typescript from Microsoft). Even then,
+# remove the exclusion once the 1-day window has passed.
+#
+# Example:
+#   minimumReleaseAgeExclude:
+#     - react
+#     - typescript
+#
+# ============================================================================
+minimumReleaseAge: 1440
+
 minimumReleaseAgeExclude:
-  - "lru.min@1.1.5"
-  - "@opencode-ai/sdk"
-  - "acorn"
-  - "dompurify"
-  - "enhanced-resolve"
-  - "js-yaml"
-  - "nanoid"
-  - "postcss"
+  # Exclude @replit scoped packages from the minimum release age check.
+  # These are published by Replit and trusted — the supply-chain attack vector
+  # this setting guards against does not apply to our own packages.
+  - '@replit/*'
+  - stripe-replit-sync
 
 packages:
-  - "apps/*"
-  - "packages/*"
-  - "ee/apps/*"
-  - "ee/packages/*"
+  - artifacts/*
+  - lib/*
+  - lib/integrations/*
+  - scripts
 
 catalog:
-  react: 19.2.8
-  react-dom: 19.2.8
+  '@replit/vite-plugin-cartographer': ^0.5.21
+  '@replit/vite-plugin-dev-banner': ^0.1.1
+  '@replit/vite-plugin-runtime-error-modal': ^0.0.6
+  '@tailwindcss/vite': ^4.1.14
+  '@tanstack/react-query': ^5.90.21
+  '@types/node': ^25.3.3
+  '@types/react': ^19.2.0
+  '@types/react-dom': ^19.2.0
+  '@vitejs/plugin-react': ^5.0.4
+  class-variance-authority: ^0.7.1
+  clsx: ^2.1.1
+  drizzle-orm: ^0.45.2
+  framer-motion: ^12.23.24
+  lucide-react: ^0.545.0
+  # Must be this exact version because expo requires it
+  react: 19.1.0
+  # Must be this exact version because expo requires it
+  react-dom: 19.1.0
+  tailwind-merge: ^3.3.1
+  tailwindcss: ^4.1.14
+  tsx: ^4.21.0
+  vite: ^7.3.2
+  wouter: ^3.3.5
+  zod: ^3.25.76
 
-catalogs:
-  react18:
-    react: 18.2.0
-    react-dom: 18.2.0
-linkWorkspacePackages: true
-preferWorkspacePackages: true
-supportedArchitectures:
-  # Release jobs cross-package the second CPU architecture on the current OS.
-  # Keeping both optional-native variants makes those artifacts runnable while
-  # avoiding the cost of installing optional dependencies for other OSes.
-  os:
-    - current
-  cpu:
-    - x64
-    - arm64
+autoInstallPeers: false
+
+onlyBuiltDependencies:
+  - '@swc/core'
+  - esbuild
+  - msw
+  - unrs-resolver
+
 overrides:
-  "@babel/code-frame@<7.29.6": 7.29.7
-  "@babel/compat-data@<7.29.6": 7.29.7
-  "@babel/core@<7.29.6": 7.29.7
-  "@babel/generator@<7.29.6": 7.29.7
-  "@babel/helper-annotate-as-pure@<7.29.6": 7.29.7
-  "@babel/helper-compilation-targets@<7.29.6": 7.29.7
-  "@babel/helper-create-class-features-plugin@<7.29.6": 7.29.7
-  "@babel/helper-globals@<7.29.6": 7.29.7
-  "@babel/helper-member-expression-to-functions@<7.29.6": 7.29.7
-  "@babel/helper-module-imports@<7.29.6": 7.29.7
-  "@babel/helper-module-transforms@<7.29.6": 7.29.7
-  "@babel/helper-optimise-call-expression@<7.29.6": 7.29.7
-  "@babel/helper-plugin-utils@<7.29.6": 7.29.7
-  "@babel/helper-replace-supers@<7.29.6": 7.29.7
-  "@babel/helper-skip-transparent-expression-wrappers@<7.29.6": 7.29.7
-  "@babel/helper-string-parser@<7.29.6": 7.29.7
-  "@babel/helper-validator-identifier@<7.29.6": 7.29.7
-  "@babel/helper-validator-option@<7.29.6": 7.29.7
-  "@babel/helpers@<7.29.6": 7.29.7
-  "@babel/parser@<7.29.6": 7.29.7
-  "@babel/plugin-syntax-jsx@<7.29.6": 7.29.7
-  "@babel/plugin-syntax-typescript@<7.29.6": 7.29.7
-  "@babel/plugin-transform-modules-commonjs@<7.29.6": 7.29.7
-  "@babel/plugin-transform-react-jsx-self@<7.29.6": 7.29.7
-  "@babel/plugin-transform-react-jsx-source@<7.29.6": 7.29.7
-  "@babel/plugin-transform-typescript@<7.29.6": 7.29.7
-  "@babel/preset-typescript@<7.29.6": 7.29.7
-  "@babel/runtime@<7.29.6": 7.29.7
-  "@babel/template@<7.29.6": 7.29.7
-  "@babel/traverse@<7.29.6": 7.29.7
-  "@babel/types@<7.29.6": 7.29.7
-  "@ai-sdk/provider-utils@>=4.0.0-beta.10 <4.0.33": 4.0.33
-  "@react-email/ui>next": 16.3.3
-  "@xmldom/xmldom@>=0.7.0 <=0.8.14": 0.8.15
-  "@grpc/grpc-js@<1.14.4": 1.14.4
-  "axios@<1.18.1": 1.18.1
-  baseline-browser-mapping: 2.11.5
-  "body-parser@>=2.0.0 <2.3.0": 2.3.0
-  "brace-expansion@<1.1.18": 1.1.18
-  "brace-expansion@>=2.0.0 <2.1.4": 2.1.4
-  "brace-expansion@>=5.0.0 <5.0.9": 5.0.9
-  "builder-util-runtime@<9.7.0": 9.7.0
-  "defu@<6.1.5": 6.1.5
-  "diff@>=8.0.0 <8.0.3": 8.0.3
-  "dompurify@<3.4.13": 3.4.13
-  "browserslist@<=4.28.6": 4.28.7
-  "fast-uri@>=3.0.0 <3.1.6": 3.1.6
-  "fast-xml-parser@>=5.0.0 <5.7.0": 5.7.0
-  "form-data@>=4.0.0 <4.0.6": 4.0.6
-  # 0.25.12 keeps the >=0.25.0 dev-server CORS fix. Do not bump to 0.28.x:
-  # its browser-name target lists (Vite optimizeDeps defaults) refuse to
-  # lower plain destructuring, which kills `vite dev` on every fresh install.
-  esbuild: 0.25.12
-  better-call: 1.3.7
-  "hono@<4.13.5": 4.13.5
-  "ip-address@>=10.0.0 <10.3.1": 10.3.1
-  "js-yaml@>=4.0.0 <4.3.2": 4.3.2
-  "nanoid@<3.3.18": 3.3.18
-  "nanoid@>=4.0.0 <5.1.16": 5.1.16
-  "postcss@<8.5.23": 8.5.23
-  "postcss-selector-parser@>=6.1.0 <6.1.3": 6.1.3
-  "postcss-selector-parser@>=7.1.0 <7.1.3": 7.1.3
-  "protobufjs@<7.6.5": 7.6.5
-  "qs@>=6.0.0 <6.16.0": 6.16.0
-  "rollup@>=4.0.0 <4.59.0": 4.59.0
-  "samlify@<2.13.0": 2.13.0
-  "sharp@<0.35.4": 0.35.4
-  "shell-quote@<1.10.0": 1.10.0
-  "socket.io-parser@>=4.0.0 <4.2.7": 4.2.7
-  "tar@<7.5.22": 7.5.22
-  "tmp@>=0.2.0 <0.2.7": 0.2.7
-  "undici@>=6.0.0 <6.28.0": 6.28.0
-  "uuid@<11.1.1": 11.1.1
-  "ws@>=8.0.0 <8.21.0": 8.21.0
-allowBuilds:
-  # @stoplight/spectral-cli -> @scarf/scarf is install analytics; never run it.
-  "@scarf/scarf": false
-  "@sentry/cli": true
-  "@whiskeysockets/baileys": true
-  better-sqlite3: true
-  # posthog-js -> core-js: skip the optional funding-message postinstall.
-  core-js: false
-  electron: true
-  electron-winstaller: true
-  esbuild: true
-  # effect -> msgpackr -> msgpackr-extract ships an optional native accelerator;
-  # msgpackr falls back to pure JS, so skip compiling it in CI and images.
-  msgpackr-extract: false
-  msw: false
-  node-pty: true
-  protobufjs: true
-  sharp: true
-patchedDependencies:
-  '@better-auth/cimd@1.7.0-beta.10': patches/@better-auth__cimd@1.7.0-beta.10.patch
-  '@better-auth/drizzle-adapter@1.7.0-beta.10': patches/@better-auth__drizzle-adapter@1.7.0-beta.10.patch
-  '@better-auth/sso@1.7.0-beta.10': patches/@better-auth__sso@1.7.0-beta.10.patch
-  '@modelcontextprotocol/client@2.0.0': patches/@modelcontextprotocol__client@2.0.0.patch
-  '@modelcontextprotocol/sdk': patches/@modelcontextprotocol__sdk.patch
+  # replit uses linux-x64 only, we can exclude all other platforms
+  "esbuild>@esbuild/darwin-arm64": "-"
+  "esbuild>@esbuild/darwin-x64": "-"
+  "esbuild>@esbuild/freebsd-arm64": "-"
+  "esbuild>@esbuild/freebsd-x64": "-"
+  "esbuild>@esbuild/linux-arm": "-"
+  "esbuild>@esbuild/linux-arm64": "-"
+  "esbuild>@esbuild/linux-ia32": "-"
+  "esbuild>@esbuild/linux-loong64": "-"
+  "esbuild>@esbuild/linux-mips64el": "-"
+  "esbuild>@esbuild/linux-ppc64": "-"
+  "esbuild>@esbuild/linux-riscv64": "-"
+  "esbuild>@esbuild/linux-s390x": "-"
+  "esbuild>@esbuild/netbsd-arm64": "-"
+  "esbuild>@esbuild/netbsd-x64": "-"
+  "esbuild>@esbuild/openbsd-arm64": "-"
+  "esbuild>@esbuild/openbsd-x64": "-"
+  "esbuild>@esbuild/sunos-x64": "-"
+  "esbuild>@esbuild/win32-arm64": "-"
+  "esbuild>@esbuild/win32-ia32": "-"
+  "esbuild>@esbuild/win32-x64": "-"
+  "esbuild>@esbuild/aix-ppc64": '-'
+  "esbuild>@esbuild/android-arm": '-'
+  "esbuild>@esbuild/android-arm64": '-'
+  "esbuild>@esbuild/android-x64": '-'
+  "esbuild>@esbuild/openharmony-arm64": '-'
+  "lightningcss>lightningcss-android-arm64": "-"
+  "lightningcss>lightningcss-darwin-arm64": "-"
+  "lightningcss>lightningcss-darwin-x64": "-"
+  "lightningcss>lightningcss-freebsd-x64": "-"
+  "lightningcss>lightningcss-linux-arm-gnueabihf": "-"
+  "lightningcss>lightningcss-linux-arm64-gnu": "-"
+  "lightningcss>lightningcss-linux-arm64-musl": "-"
+  "lightningcss>lightningcss-linux-x64-musl": "-"
+  "lightningcss>lightningcss-win32-arm64-msvc": "-"
+  "lightningcss>lightningcss-win32-x64-msvc": "-"
+  "@tailwindcss/oxide>@tailwindcss/oxide-android-arm64": "-"
+  "@tailwindcss/oxide>@tailwindcss/oxide-darwin-arm64": "-"
+  "@tailwindcss/oxide>@tailwindcss/oxide-darwin-x64": "-"
+  "@tailwindcss/oxide>@tailwindcss/oxide-freebsd-x64": "-"
+  "@tailwindcss/oxide>@tailwindcss/oxide-linux-arm-gnueabihf": "-"
+  "@tailwindcss/oxide>@tailwindcss/oxide-linux-arm64-gnu": "-"
+  "@tailwindcss/oxide>@tailwindcss/oxide-linux-arm64-musl": "-"
+  "@tailwindcss/oxide>@tailwindcss/oxide-win32-arm64-msvc": "-"
+  "@tailwindcss/oxide>@tailwindcss/oxide-win32-x64-msvc": "-"
+  "@tailwindcss/oxide>@tailwindcss/oxide-linux-x64-musl": "-"
+  "rollup>@rollup/rollup-android-arm-eabi": "-"
+  "rollup>@rollup/rollup-android-arm64": "-"
+  "rollup>@rollup/rollup-darwin-arm64": "-"
+  "rollup>@rollup/rollup-darwin-x64": "-"
+  "rollup>@rollup/rollup-freebsd-arm64": "-"
+  "rollup>@rollup/rollup-freebsd-x64": "-"
+  "rollup>@rollup/rollup-linux-arm-gnueabihf": "-"
+  "rollup>@rollup/rollup-linux-arm-musleabihf": "-"
+  "rollup>@rollup/rollup-linux-arm64-gnu": "-"
+  "rollup>@rollup/rollup-linux-arm64-musl": "-"
+  "rollup>@rollup/rollup-linux-loong64-gnu": "-"
+  "rollup>@rollup/rollup-linux-loong64-musl": "-"
+  "rollup>@rollup/rollup-linux-ppc64-gnu": "-"
+  "rollup>@rollup/rollup-linux-ppc64-musl": "-"
+  "rollup>@rollup/rollup-linux-riscv64-gnu": "-"
+  "rollup>@rollup/rollup-linux-riscv64-musl": "-"
+  "rollup>@rollup/rollup-linux-s390x-gnu": "-"
+  "rollup>@rollup/rollup-linux-x64-musl": "-"
+  "rollup>@rollup/rollup-openbsd-x64": "-"
+  "rollup>@rollup/rollup-openharmony-arm64": "-"
+  "rollup>@rollup/rollup-win32-arm64-msvc": "-"
+  "rollup>@rollup/rollup-win32-ia32-msvc": "-"
+  "rollup>@rollup/rollup-win32-x64-gnu": "-"
+  "rollup>@rollup/rollup-win32-x64-msvc": "-"
+  "@expo/ngrok-bin>@expo/ngrok-bin-darwin-arm64": "-"
+  "@expo/ngrok-bin>@expo/ngrok-bin-darwin-x64": "-"
+  "@expo/ngrok-bin>@expo/ngrok-bin-freebsd-ia32": "-"
+  "@expo/ngrok-bin>@expo/ngrok-bin-freebsd-x64": "-"
+  "@expo/ngrok-bin>@expo/ngrok-bin-linux-arm64": "-"
+  "@expo/ngrok-bin>@expo/ngrok-bin-linux-arm": "-"
+  "@expo/ngrok-bin>@expo/ngrok-bin-linux-ia32": "-"
+  "@expo/ngrok-bin>@expo/ngrok-bin-sunos-x64": "-"
+  "@expo/ngrok-bin>@expo/ngrok-bin-win32-ia32": "-"
+  "@expo/ngrok-bin>@expo/ngrok-bin-win32-x64": "-"
+  # drizzle-kit uses esbuild internally on an older version that's vulnerable, this overrides it
+  "@esbuild-kit/esm-loader": "npm:tsx@^4.21.0"
+  esbuild: "0.28.2"
+  # orval pins js-yaml to an exact version older than the CVE fix (>=4.3.2)
+  js-yaml: '4.3.2'
