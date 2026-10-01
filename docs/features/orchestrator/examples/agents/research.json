@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "identity": {"slug": "research", "displayName": "Research", "labels": ["sample"]},
+  "role": {
+    "kind": "worker",
+    "responsibilities": ["Gather the facts needed to answer one request"],
+    "accepts": [{"type": "research.requested"}],
+    "produces": ["reply.draft.requested"]
+  },
+  "instructions": {
+    "system": "Read the request, search the knowledge base and the playbooks, and hand a short list of cited facts to the drafter."
+  },
+  "model": {
+    "primary": {"providerId": "example-provider", "modelId": "example-model"}
+  },
+  "runtime": {"target": "headless", "mode": "event", "concurrency": 2},
+  "triggers": [{"kind": "task", "taskTypes": ["research.requested"]}],
+  "tools": {
+    "allow": [
+      {"capability": "inbox.get"},
+      {"capability": "kb.search"}
+    ],
+    "orchestrator": ["report_status", "ask_clarification", "delegate_task", "memory_read"]
+  },
+  "permissions": {"inputTrust": "untrusted", "delegateTo": ["drafter"]},
+  "memory": {"read": ["task", "org"], "write": ["task"], "orgNamespaces": ["playbooks"]},
+  "limits": {
+    "cost": {
+      "perAttemptMicroUsd": 200000,
+      "perTaskMicroUsd": 400000,
+      "perDayMicroUsd": 5000000,
+      "perMonthMicroUsd": 50000000
+    }
+  }
+}
