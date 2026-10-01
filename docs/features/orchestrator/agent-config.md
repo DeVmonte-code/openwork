@@ -485,7 +485,7 @@ presets of the same schema, not separate types.
 
 A version cannot be activated until it has passed levels 1 to 3 against the
 organization's current state. Level 4 is optional. Validation is a pure function
-in `packages/orchestrator` with its ports (tool catalogue, member access,
+in `packages/agent-orchestrator` with its ports (tool catalogue, member access,
 organization policy) injected, so every rule is unit-testable.
 
 | Level | Checks |

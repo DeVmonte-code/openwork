@@ -44,7 +44,7 @@ or changed each decision in this folder.
 - `packages/types/src/orchestrator.ts`: the schemas in
   [agent-config.md](agent-config.md) and [messaging.md](messaging.md), with
   `.meta({ ref })` names. The six `examples/agents/*.json` become fixtures.
-- `packages/orchestrator` with no infrastructure: V1 to V3 validation behind
+- `packages/agent-orchestrator` with no infrastructure: V1 to V3 validation behind
   ports, agent and task state machines, idempotency key derivation, loop
   guards, backoff, the effect state machine, ledger hashing, the repository and
   runner ports, an in-memory repository, and the conformance suite.
@@ -225,9 +225,9 @@ default that turns out wrong changes the named document.
 ## First pull requests after sign-off
 
 1. `packages/types`: the orchestrator schemas, with no consumers yet.
-2. `packages/orchestrator`: configuration validation and the two state machines,
+2. `packages/agent-orchestrator`: configuration validation and the two state machines,
    with tests.
-3. `packages/orchestrator`: keys, loop guards, backoff, ledger hashing, with tests.
-4. `packages/orchestrator`: ports, the in-memory repository and the conformance
+3. `packages/agent-orchestrator`: keys, loop guards, backoff, ledger hashing, with tests.
+4. `packages/agent-orchestrator`: ports, the in-memory repository and the conformance
    suite.
 5. `ee/packages/den-db`: the schema and migration.

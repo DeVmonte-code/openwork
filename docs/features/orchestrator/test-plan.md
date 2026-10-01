@@ -14,9 +14,9 @@ happened, so a pass cannot mean "nothing was exercised"
 
 | Layer | Where | Runs | What it proves |
 | --- | --- | --- | --- |
-| Domain unit and table tests | `packages/orchestrator/src/*.test.ts` with `bun test src` | Every PR | State machines, config validation, loop guards, key derivation, ledger hashing, backoff |
-| Repository conformance | `packages/orchestrator/src/testing.ts`, the pattern of `packages/automations/src/testing.ts`; run against an in-memory repository and against MySQL | Every PR (memory); with `DEN_TEST_DATABASE_URL` (MySQL) | Claim, lease, fencing, idempotency, dead letter, ledger append behave identically on both |
-| Service integration | `ee/apps/den-api/test/orchestrator-*.test.ts` with `bun test --conditions development` against a disposable database | Every PR touching the orchestrator | Reconciler, effect gateway, approvals, budgets, routes and route access |
+| Domain unit and table tests | `packages/agent-orchestrator/src/*.test.ts` with `bun test src` | Every PR | State machines, config validation, loop guards, key derivation, ledger hashing, backoff |
+| Repository conformance | `packages/agent-orchestrator/src/testing.ts`, the pattern of `packages/automations/src/testing.ts`; run against an in-memory repository and against MySQL | Every PR (memory); with `DEN_TEST_DATABASE_URL` (MySQL) | Claim, lease, fencing, idempotency, dead letter, ledger append behave identically on both |
+| Service integration | `ee/apps/den-api/test/agent-orchestrator-*.test.ts` with `bun test --conditions development` against a disposable database | Every PR touching the orchestrator | Reconciler, effect gateway, approvals, budgets, routes and route access |
 | Contract | `pnpm api:snapshot`, `pnpm api:lint`, route-access tests | Every PR touching the API | The published contract matches the code |
 | Journey specs | `evals/specs/orchestrator-*.e2e.test.ts` | PR change proof, published as the PR's evidence | What a person sees, before and after, including who cannot |
 | Fault injection | `evals/specs` worlds that kill processes, plus scripts under the orchestrator package | Nightly, and before each pilot stage | Recovery without duplicate effects |

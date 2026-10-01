@@ -81,6 +81,18 @@ share infrastructure and neither replaces the other; see
 `examples/agents/*.json` are the six sample configurations. They are the first
 fixtures the schema tests will load.
 
+## A note on names
+
+In product copy this is the **Orchestrator**. In code it is the **agent
+orchestrator**: the repository already has an `orchestrator` that means
+something else. `ee/packages/cloud-runtime/src/orchestrator` provisions, starts
+and stops cloud sandbox hosts. It is unrelated to coordinating agents, but it is
+the piece that creates the cloud workers the later `cloud` runner target would
+use. To keep the two apart, new code locations use `agent-orchestrator`
+(`packages/agent-orchestrator`, `ee/apps/den-api/src/agent-orchestrator/`), and
+database tables, API paths and the app folder keep the plain `orchestrator`
+prefix because nothing there collides.
+
 ## Glossary
 
 | Term | Meaning |
@@ -109,7 +121,7 @@ All are proposals until a maintainer confirms. "Needs" names who should confirm.
 | D6 | The orchestrator keeps its own hash-chained ledger and mirrors to Den audit once that system covers orchestrator kinds. | `audit-log.ts` accepts only a few operation kinds today and cloud-source retention is `delete_oldest` | Audit owner |
 | D7 | Configuration is data validated by Zod. Trigger conditions are declarative predicates, never code. | Reviewable, diffable, safe to store | Architecture owner |
 | D8 | Per-agent budgets reserve before spend and settle after. Org ceilings stay in the gateway usage policy. Spend through bring-your-own-key providers is estimated, not metered. | `team-execution-policy.md`: no budget policy exists today | Billing owner |
-| D9 | The pure domain goes in `packages/orchestrator` (MIT); persistence, routes and loops go in `ee/`. | Matches how Automations is split; `REUSE.toml` sets the licence boundary at `ee/` | Maintainers |
+| D9 | The pure domain goes in `packages/agent-orchestrator` (MIT); persistence, routes and loops go in `ee/`. | Matches how Automations is split; `REUSE.toml` sets the licence boundary at `ee/` | Maintainers |
 | D10 | The tab is called "Orchestrator" while behind the rollout flag. Design reviews the name before general availability. | `DESIGN.md` C3 asks for names people control, and "Agents" already means local OpenCode agents in the Library | Design owner |
 | D11 | Writing orchestrator configuration is an Enterprise feature. Pause, stop, retire and reading are never gated. | `docs/enterprise-plan-gating.md` | Product owner |
 | D12 | The orchestrator is scoped to one organization. | Same as Automations | Architecture owner |

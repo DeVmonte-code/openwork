@@ -100,12 +100,12 @@ flowchart LR
 | Component | Responsibility | Location (proposed) |
 | --- | --- | --- |
 | Wire types | Zod schemas and inferred types shared by API, app and runners | `packages/types/src/orchestrator.ts` |
-| Domain | State machines, config validation, loop guards, key derivation, ledger hashing, ports, repository conformance suite. No infrastructure | `packages/orchestrator` |
+| Domain | State machines, config validation, loop guards, key derivation, ledger hashing, ports, repository conformance suite. No infrastructure | `packages/agent-orchestrator` |
 | Persistence | Drizzle tables and migrations | `ee/packages/den-db/src/schema/orchestrator.ts`, generated with `pnpm --dir ee/packages/den-db db:generate` |
-| Service | Repository over MySQL, reconciler, claim and lease logic, effect gateway, approvals, budgets | `ee/apps/den-api/src/orchestrator/` |
+| Service | Repository over MySQL, reconciler, claim and lease logic, effect gateway, approvals, budgets | `ee/apps/den-api/src/agent-orchestrator/` |
 | Routes | Org-scoped HTTP, SSE, runner protocol, webhook intake | `ee/apps/den-api/src/routes/org/orchestrator.ts` and a runner route group |
 | MCP tools | Run-scoped orchestrator tools and external task submission | `ee/apps/den-api/src/mcp/` |
-| Runner adapters | Translate an attempt into a runner call | `ee/apps/den-api/src/orchestrator/runners/` |
+| Runner adapters | Translate an attempt into a runner call | `ee/apps/den-api/src/agent-orchestrator/runners/` |
 | App | The tab and its views | `apps/app/src/react-app/domains/orchestrator/` |
 
 The domain package has no runtime adapter, exactly like `@openwork/automations`.
