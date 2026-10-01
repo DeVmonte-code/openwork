@@ -1,0 +1,28 @@
+[
+  {
+    "code": "dependent_on_unavailable_manager",
+    "severity": "warning",
+    "agentId": "agt_01j9z8q2k4m4",
+    "relationshipId": "rel_01j9z8r2k4a6",
+    "message": "Drafter relies on Reviewer (High), which is paused."
+  },
+  {
+    "code": "no_manager",
+    "severity": "warning",
+    "agentId": "agt_01j9z8q2k4m7",
+    "message": "Archivist has no manager and is not the root agent."
+  },
+  {
+    "code": "span_over_limit",
+    "severity": "warning",
+    "agentId": "agt_01j9z8q2k4m0",
+    "message": "Operations coordinator supervises 5 agents; the limit is 4."
+  },
+  {
+    "code": "large_control_dependency_gap",
+    "severity": "info",
+    "agentId": "agt_01j9z8q2k4m1",
+    "relationshipId": "rel_01j9z8r2k4a1",
+    "message": "Operations coordinator controls Intake at Full but it relies on them at Very low."
+  }
+]

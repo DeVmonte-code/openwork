@@ -26,7 +26,7 @@ Status: proposal. Part of [the orchestrator plan](README.md). Covers brief step 
 | Brief item | Config path | Notes |
 | --- | --- | --- |
 | Identity | `identity` | `slug` is unique per organization and is how other agents address this one |
-| Role and responsibilities | `role` | `kind`, up to 10 `responsibilities`, and the task types the agent `accepts` and `produces` |
+| Role and responsibilities | `role` | `kind` (including `manager`), up to 10 `responsibilities`, `decisionAuthority` (plain sentences on what the agent may decide alone), and the task types the agent `accepts` and `produces` |
 | Instructions or system prompt | `instructions` | Encrypted at rest. Guardrails are extra lines appended to every attempt |
 | Model | `model` | A primary and up to two fallbacks, tried in order after `model_failure` |
 | Tool access | `tools` | Allow and deny lists of catalogue capabilities, and which orchestrator tools the agent gets |
@@ -35,7 +35,7 @@ Status: proposal. Part of [the orchestrator plan](README.md). Covers brief step 
 | Execution frequency | `runtime.mode`, `frequency` | Interval, daily or weekly schedule, tick interval, minimum gap, attempts per hour, quiet hours |
 | Memory and context | `memory` | Context size, scopes the agent may read and write, organization namespaces, retention |
 | Permissions | `permissions` | Input trust, data classes, who it may delegate to, approval requirements and approvers |
-| Retry and escalation | `retry`, `escalation`, `deadLetter` | Attempts, backoff, retryable error classes; rules that notify, reassign, pause or require a human |
+| Retry and escalation | `retry`, `escalation`, `deadLetter` | Attempts, backoff, retryable error classes; rules that notify, reassign, pause or require a human. Who the agent reports to is not here: see below |
 | Resource and cost limits | `limits`, `runtime.concurrency` | Runtime, steps, tokens, cost per attempt, task, day and month, queue depth, fan-out, new processes, visits per process |
 
 ## The schema
@@ -61,6 +61,9 @@ export const errorClassSchema = z.enum([
 ])
 
 export const orgRoleSchema = z.enum(["owner", "super-admin", "admin"])
+
+/** `manager` supervises other agents; see hierarchy.md. */
+export const roleKindSchema = z.enum(["dispatcher", "worker", "reviewer", "executor", "monitor", "manager", "custom"])
 
 const slugSchema = z.string().regex(/^[a-z][a-z0-9-]{1,38}[a-z0-9]$/)
 /** Task, event and result types, e.g. `reply.draft.requested`. */
@@ -173,8 +176,10 @@ export const agentConfigV1Schema = z.strictObject({
 
   /** Role and responsibilities, plus the task types this agent consumes and produces. */
   role: z.strictObject({
-    kind: z.enum(["dispatcher", "worker", "reviewer", "executor", "monitor", "custom"]),
+    kind: roleKindSchema,
     responsibilities: z.array(z.string().trim().min(1).max(200)).min(1).max(10),
+    /** What this agent may decide on its own, in plain sentences. Shown in the agent register. */
+    decisionAuthority: z.array(z.string().trim().min(1).max(200)).max(10).default([]),
     accepts: z.array(z.strictObject({
       type: typeNameSchema,
       /** Restricted JSON Schema subset; the validator is chosen in milestone M1. Checked when work is delegated to this agent. */
@@ -442,8 +447,9 @@ export type AgentConfigV1 = z.output<typeof agentConfigV1Schema>
 
 ### An example
 
-The sender is the most interesting of the six, because it holds the only
-external-write tool. The others are in `examples/agents/`.
+The sender is the most interesting of the seven, because it holds the only
+external-write tool. The others are in `examples/agents/`; `coordinator.json` is the
+manager of the set.
 
 ```json
 {
@@ -643,6 +649,16 @@ notification, not sixty.
 | `require_human` | An attention item that must be resolved; the task waits for an answer |
 | `reassign` | Queued tasks for this agent move to another agent that accepts the type |
 | `pause_agent` | Sets the desired state to paused |
+
+### Who an agent reports to
+
+The configuration does not say who the agent's manager is. The reporting relationship is a
+separate record with its own history, the control and dependency degrees, and the level at
+which the agent must escalate a decision to its manager ([hierarchy.md](hierarchy.md)).
+The rules above tell the orchestrator whom to notify about the agent's health; the
+hierarchy tells the agent where a decision goes. Keeping them apart means changing who
+supervises an agent is not a new configuration version, and needs its own permission and
+ledger entry.
 
 ## Schema evolution
 

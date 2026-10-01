@@ -7,8 +7,8 @@ Status: proposal. Part of [the orchestrator plan](README.md). Covers brief steps
 
 ### Initial agent types
 
-These six are the pilot set. They are described fully in
-[sample-process.md](sample-process.md) and configured in `examples/agents/`.
+These six are the pilot set, with a seventh, the `coordinator`, that supervises them. They are
+described fully in [sample-process.md](sample-process.md) and configured in `examples/agents/`.
 
 | Agent | Role kind | Run mode | Reads untrusted input | Tools | Hands work to | Approval |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -18,6 +18,7 @@ These six are the pilot set. They are described fully in
 | `reviewer` | reviewer | event | no | read the knowledge base | `sender`, or back to `drafter` | none |
 | `sender` | executor | event | no | send a reply (external write) | none | always |
 | `digest` | monitor | schedule, daily | no | inspect the queue, notify | none | none |
+| `coordinator` | manager | event | no | delegate, inspect the queue, notify | `research`, `reviewer`, `sender` | none |
 
 Two rules shape this set. An agent that reads content an outsider can write
 holds no tool that changes the outside world. The only agent that changes the
@@ -57,6 +58,12 @@ processes bounded by tick cadence.
   `succeeded` only if all of them are.
 - Status updates and clarification questions are messages on the task's thread.
   People see them live.
+- An agent that cannot decide something asks its manager first. Every agent except the root has
+  exactly one manager, recorded apart from its configuration, with a control degree, a
+  dependency degree and a level at which it must escalate. A question or decision goes to the
+  nearest manager that is running, then up the chain, and past the root to a person. A manager
+  agent can add an internal approval; it never replaces a person's approval of an external write
+  or an irreversible action. See [hierarchy.md](hierarchy.md).
 
 ### Discovery
 

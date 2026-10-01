@@ -43,15 +43,20 @@ or changed each decision in this folder.
 
 - `packages/types/src/orchestrator.ts`: the schemas in
   [agent-config.md](agent-config.md) and [messaging.md](messaging.md), with
-  `.meta({ ref })` names. The six `examples/agents/*.json` become fixtures.
+  `.meta({ ref })` names. The seven `examples/agents/*.json` become fixtures.
 - `packages/agent-orchestrator` with no infrastructure: V1 to V3 validation behind
   ports, agent and task state machines, idempotency key derivation, loop
   guards, backoff, the effect state machine, ledger hashing, the repository and
   runner ports, an in-memory repository, and the conformance suite.
 - The A2A subset, the internal-to-A2A state projection and the Agent Card generator
   ([a2a.md](a2a.md)), checked against types generated from the pinned specification.
+- The hierarchy rules ([hierarchy.md](hierarchy.md)): the relationship record, the two scales,
+  span of control, validation (self-report, loops, duplicates, second manager, scale, span
+  limit), reassignment and retirement, decision and escalation routing, and the five
+  reports. The reference code embedded in that page and its 97 checks are ported as the first
+  tests; the examples in `examples/hierarchy/` become fixtures.
 
-**Exit:** `bun test src` green, including L7, C1, C2, C8 and the hash-chain part
+**Exit:** `bun test src` green, including L7, C1, C2, C8, H1 to H14 and the hash-chain part
 of G5. The negative config cases and state-machine reachability checks prototyped
 for this plan are ported as tests.
 
@@ -62,6 +67,9 @@ for this plan are ported as tests.
 - A MySQL repository: claim, lease, heartbeat, reaper, fencing, idempotency,
   dead letter, effect log, budgets, ledger append and state, organization
   policy.
+- `orchestrator_reporting_relationship`, with a partial unique index that allows one active
+  manager per agent, and the three policy columns for the hierarchy. The conformance suite
+  runs the hierarchy rules on both repositories.
 - The source-boundary test that allows only `append` on the ledger.
 
 **Exit:** the conformance suite passes on MySQL; R3, R4, R8, R10, R12 pass;
@@ -75,10 +83,12 @@ schema.
   the stream.
 - Routes with `describeRoute()`, the OpenAPI snapshot, route-access tests, plan
   gating for writes.
+- The Hierarchy routes and the four reports ([api.md](api.md), "Hierarchy"), writing one
+  `hierarchy.*` ledger entry per change in the same transaction.
 - The Agent Card for every active agent and the A2A endpoint (`SendMessage`, `GetTask`,
   `ListTasks`, `CancelTask`) under `/a2a`, as a protocol adapter.
 
-**Exit:** L1 to L8, C3 to C7 and X2 to X6, X8, X10 pass; `pnpm api:snapshot` committed and
+**Exit:** L1 to L8, C3 to C7, X2 to X6, X8, X10 and the service-layer hierarchy checks pass; `pnpm api:snapshot` committed and
 `pnpm api:lint` clean without raising the baseline.
 
 ### M4 Execution
@@ -99,9 +109,13 @@ step on its own.
   second-activator rule.
 - The outbound A2A client and the remote agent registry, built and tested but off in
   the pilot.
+- Manager behaviour: decision routing along the hierarchy (escalation to the nearest running
+  manager, a manager's approval as an extra internal gate), clarifications with audience
+  `manager`, and `hierarchy.manager_action` entries for stop, override and reassign-work.
+  A manager agent can never satisfy an external-write or irreversible approval (D19).
 
-**Exit:** A1 to A9, P1 to P6, G1, G2, G6, G7, X7 and X9 pass; J3, J4 and J5 green as
-specs.
+**Exit:** A1 to A9, P1 to P6, G1, G2, G6, G7, X7 and X9 pass, with the D19 test; J3, J4 and J5
+green as specs.
 
 ### M6 Surfaces and observability
 
@@ -111,6 +125,8 @@ specs.
   entry, control registrations, `en` strings.
 - The agent builder described in [ui.md](ui.md) (Configure and Preview, requests it
   handles, example requests) and `SubscribeToTask` over server-sent events.
+- The Hierarchy page ([ui.md](ui.md)): tree, both-direction panel, the four report views,
+  the Change manager dialog with live validation, and the `hierarchy` stream event.
 - Rollups, metrics, logs, traces, the alert rules, the Den dashboard monitor and
   a Grafana dashboard under `infra/`.
 - The local pilot stack: a headless-runner image (`packaging/docker/Dockerfile.headless-runner`)
@@ -118,7 +134,7 @@ specs.
   in the style of `den-dev-up.sh`, the small mock MCP servers the sample needs,
   and a short local setup and backup guide.
 
-**Exit:** O1 to O5 pass; J1 green; the screenshot set in [ui.md](ui.md) attached
+**Exit:** O1 to O5 pass; J1 and J6 green; the screenshot set in [ui.md](ui.md) attached
 to the pull requests; `.warden/skills/design-spec-review` run locally.
 
 ### M7 Resilience, security, scale
@@ -208,7 +224,7 @@ default that turns out wrong changes the named document.
 | --- | --- | --- | --- |
 | 1 | Deployment environment | **Decided: the pilot runs self-hosted on one local device the team controls** ([operations.md](operations.md), "Local single-device profile"). Kubernetes (EKS, AKS, GKE) and hybrid runners stay supported for later | Which machine, and that it stays on |
 | 2 | Implementation stack | The existing one: TypeScript, Hono, Drizzle on MySQL, React, TanStack Query, Zod; MySQL as the queue | Confirmation that no separate broker is wanted |
-| 3 | Initial agents and process | The six in [sample-process.md](sample-process.md) | The first real, low-risk internal process |
+| 3 | Initial agents and process | The six in [sample-process.md](sample-process.md), plus a coordinator over them | The first real, low-risk internal process |
 | 4 | Availability and recovery targets | [operations.md](operations.md) section 3 | Required uptime, RPO and RTO |
 | 5 | Autonomy boundary | Reads and drafts are autonomous; every external write is approved; irreversible actions are off | Which actions are irreversible for the pilot process, and who approves |
 | 6 | Data classification | `public`, `internal`, `confidential`, `restricted` | The organization's scheme, and which model providers may receive which class |
@@ -217,6 +233,7 @@ default that turns out wrong changes the named document.
 | 9 | Decisions D6, D9, D10, D11 | As proposed in the README | Maintainer and product confirmation |
 | 10 | A2A details ([a2a.md](a2a.md), "Open items") | HTTP+JSON binding, internal exposure only, no remote agents in the pilot | Binding confirmed by an interop test, the extension namespace, whether cards may be shared outside the organization, and where card signing keys live |
 | 11 | Which tree the code is built in (D17) | The original layout; the Replit workspace stays a preview | Confirmation that the fork's `dev` should keep the Replit layout, or return to the original one |
+| 12 | Hierarchy details ([hierarchy.md](hierarchy.md), "Assumptions to confirm") | One root; one manager per agent; five levels with the powers and reliances in that page; a span limit of 7, flagged not blocked; "active" means not draft or retired; escalation level read as an impact level; "reassign" read as moving work, with moving the agent a person's change; existing ids and slugs, not `AG-001` codes | Confirmation of each, above all the span limit, the powers at each control degree, and whether a display code is wanted |
 
 ## The brief's artefacts
 
@@ -231,6 +248,7 @@ default that turns out wrong changes the named document.
 | Monitoring and alerting configuration | [operations.md](operations.md) sections 1 and 2 | M6, as alert rules and a dashboard |
 | Runbook and incident procedures | [operations.md](operations.md) sections 5 and 6 | Rehearsed in M7 |
 | Sample multi-agent workflow | [sample-process.md](sample-process.md), `examples/agents/` | M4 and M6 |
+| Agent register, hierarchy diagram, span-of-control report, dependency report, exceptions report and relationship matrix | [hierarchy.md](hierarchy.md), `examples/hierarchy/` | M1 (rules), M3 (routes), M6 (page) |
 | Automated test suite | [test-plan.md](test-plan.md) | Built across M1 to M7 |
 
 ## First pull requests after sign-off
@@ -239,6 +257,7 @@ default that turns out wrong changes the named document.
 2. `packages/agent-orchestrator`: configuration validation and the two state machines,
    with tests.
 3. `packages/agent-orchestrator`: keys, loop guards, backoff, ledger hashing, with tests.
-4. `packages/agent-orchestrator`: ports, the in-memory repository and the conformance
+4. `packages/agent-orchestrator`: the hierarchy rules and their tests ([hierarchy.md](hierarchy.md)).
+5. `packages/agent-orchestrator`: ports, the in-memory repository and the conformance
    suite.
-5. `ee/packages/den-db`: the schema and migration.
+6. `ee/packages/den-db`: the schema and migration.

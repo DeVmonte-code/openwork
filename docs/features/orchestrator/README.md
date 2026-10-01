@@ -73,17 +73,19 @@ share infrastructure and neither replaces the other; see
 | [agent-config.md](agent-config.md) | 2 | Versioned configuration schema, validation, activation, rollback |
 | [messaging.md](messaging.md) | 6 | Agent-to-agent message contract and history |
 | [a2a.md](a2a.md) | 3, 6 | The A2A protocol: Agent Cards, task states, delegation as A2A messages, remote agents, interoperability |
+| [hierarchy.md](hierarchy.md) | Span-of-control task | Who reports to whom: one manager per agent, control and dependency degrees, span of control, the five reports |
 | [memory.md](memory.md) | 7 | Task context versus durable memory, retention, access |
 | [governance.md](governance.md) | 8 | Permission matrix, approvals, secrets, ledger, loop and spend controls, threat model |
 | [api.md](api.md) | 10 | HTTP, stream, runner and MCP surfaces |
 | [ui.md](ui.md) | 10 | The sidebar tab, routes, views, states, copy, `DESIGN.md` mapping |
 | [operations.md](operations.md) | 9, 12 | Metrics, alerts, deployment profiles, runbooks, incident procedure |
-| [sample-process.md](sample-process.md) | Done criterion 11 | Six agents collaborating from request to sent reply |
+| [sample-process.md](sample-process.md) | Done criterion 11 | Six agents, with a coordinator over them, collaborating from request to sent reply |
 | [test-plan.md](test-plan.md) | 11 | Resilience matrix, permission and approval tests, journey specs |
 | [delivery-plan.md](delivery-plan.md) | 12 | Milestones, exit criteria, pilot, risks, questions still open |
 
-`examples/agents/*.json` are the six sample configurations. They are the first
-fixtures the schema tests will load.
+`examples/agents/*.json` are the seven sample configurations (six workers and the
+coordinator that manages them). They are the first fixtures the schema tests will load.
+`examples/hierarchy/*.json` hold the hierarchy reports for the same organization.
 
 ## A note on names
 
@@ -124,6 +126,11 @@ built there (decision D17).
 | Approval | A human decision bound to one effect and one exact set of arguments |
 | Ledger | The append-only, hash-chained governance record: changes, decisions, effects |
 | Reconciler | The loop that moves each agent's observed state toward the state an operator asked for |
+| Manager | An agent that supervises other agents (`role.kind: manager`, or any agent with direct reports). Has exactly one manager of its own, except the root |
+| Direct report | An agent with a recorded, active reporting relationship to one manager |
+| Span of control | The number of active direct reports a manager has. Counted, never stored. Indirect reports are not counted |
+| Control degree | 1 to 5: how much authority the manager has over the report |
+| Dependency degree | 1 to 5: how much the report relies on its manager. Stored separately from the control degree |
 
 ## Decisions
 
@@ -148,6 +155,9 @@ All are proposals until a maintainer confirms. "Needs" names who should confirm.
 | D15 | A finished task is never reopened. Retrying creates a new task that references the old one. | A2A forbids messages to finished tasks, and it makes the record easier to audit | Architecture owner |
 | D16 | The A2A binding is HTTP+JSON under `/a2a`, as a protocol adapter. In the pilot every agent is `internal` and no remote agents are registered. | One operation per route keeps authorisation and audit simple; widening exposure is a separate security decision | Security owner |
 | D17 | The orchestrator backend is built in the original repository layout. The Replit workspace's `artifacts/openwork` is a preview and a source to port the tab from. | Den, the headless runner, the database package and the evals only exist in the original layout | Maintainers |
+| D18 | Every agent except the root has exactly one direct manager. There is no matrix reporting, and no loops. | A single line of authority keeps escalation, approval and accountability unambiguous | Product owner |
+| D19 | A manager agent can satisfy an internal approval but never an approval for an external write or an irreversible action. Those stay with a person at every control degree. | A manager agent is software; the human floor in governance.md must not have a path around it | Security owner |
+| D20 | Changing the hierarchy needs the right to activate a version, and every change is a ledger entry. Agents may recommend a change but never make one. The span limit is 7 and breaches are flagged, not blocked, until the organization chooses `block`. | The hierarchy decides who has authority, so it is governed like configuration. The limit of 7 is a starting point to confirm | Product owner |
 
 ## Traceability to the brief
 
@@ -164,6 +174,7 @@ All are proposals until a maintainer confirms. "Needs" names who should confirm.
 | Human approval | governance.md "Approvals" | test-plan.md A1 to A9, spec J3 |
 | No uncontrolled loops or duplicates | governance.md "Loop and spend controls", architecture.md "Idempotency" | test-plan.md R5, R10, G1 to G4, spec J4 |
 | Sample multi-agent workflow | sample-process.md | spec J1, J2 |
+| Span of control and dependency reporting (the follow-on task) | hierarchy.md | test-plan.md H1 to H14, spec J6 |
 
 ## Out of scope
 

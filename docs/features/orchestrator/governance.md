@@ -29,7 +29,7 @@ the permissions below where the Den API supports them.
 | `orchestrator.submit` | Create root tasks | yes | yes | yes | organization setting | organization setting |
 | `orchestrator.operate` | Pause, resume, restart, stop; cancel, requeue, reassign tasks | yes | yes | yes | own agents | no |
 | `orchestrator.configure` | Create agents; save and validate drafts | yes | yes | yes | no | no |
-| `orchestrator.activate` | Activate or roll back a version | yes | yes | agents without external-write or irreversible tools | no | no |
+| `orchestrator.activate` | Activate or roll back a version. Also required to change the reporting hierarchy (add, change, end or reassign a reporting relationship) | yes | yes | agents without external-write or irreversible tools | no | no |
 | `orchestrator.approve` | Decide an approval, if also named in that agent's `approvers` | yes | yes | if named | if named | if named |
 | `orchestrator.memory` | Review proposals, curate organization memory | yes | yes | yes | no | no |
 | `orchestrator.audit` | Read the ledger | yes | yes | yes | no | no |
@@ -43,6 +43,10 @@ Notes:
 - With `requireSecondActivator` on, the person who activates a version for an
   agent with external-write tools cannot be the person who last edited it.
 - Every denied attempt to use one of these is written to the ledger.
+- Reading the hierarchy and its reports needs only `orchestrator.view`. Changing it needs
+  `orchestrator.activate` for both agents involved, because it decides who has authority
+  ([hierarchy.md](hierarchy.md)). Editing the span limit or the root agent is policy and needs
+  `orchestrator.admin`.
 
 ## What agents can do
 
@@ -161,6 +165,11 @@ proves the approver saw what will run.
 - **Rate.** An agent that raises more than a set number of approvals per hour
   (default 20) is quarantined, because a flood of approvals trains people to
   click through.
+- **Manager agents.** In a reporting hierarchy ([hierarchy.md](hierarchy.md)) a manager agent
+  may be required to approve its report's decision first, depending on the control degree.
+  That is an extra internal gate. For an `external_write` or `irreversible` effect a person
+  still decides, at every control degree, and a manager agent can never be a named approver
+  (D19).
 
 ## Remote agents (A2A)
 
@@ -239,6 +248,7 @@ one breaks it.
 | Tasks | `task.created_by_member`, `task.dead_lettered`, `task.requeued`, `task.discarded`, `task.cancelled_by_member` |
 | Effects | `effect.executed`, `effect.denied`, `effect.unknown_resolved` |
 | Approvals | `approval.requested`, `approval.decided`, `approval.expired`, `approval.withdrawn` |
+| Hierarchy | `hierarchy.relationship_created`, `hierarchy.relationship_changed`, `hierarchy.relationship_ended`, `hierarchy.policy_changed`, `hierarchy.manager_action` (a manager stopping an action, overriding a decision or reassigning work) |
 | Policy | `policy.updated`, `policy.exception_granted`, `limits.changed`, `killswitch.engaged`, `killswitch.released` |
 | Memory | `memory.org_committed`, `memory.org_deleted`, `memory.erased` |
 | Ledger | `ledger.exported`, `ledger.verified`, `ledger.anchor` |
@@ -317,7 +327,7 @@ a default; the organization's own is an open question.
 One row per organization, with a `revision` like `audit_policy`, edited only by
 `orchestrator.admin` and ledgered:
 
-`enabled`, `maxHops`, `maxTasksPerProcess`, `maxOpenProcesses`, `processDeadlineMs`,
+`enabled`, `rootAgentId`, `maxSpanOfControl`, `spanEnforcement` (`flag` or `block`), `maxHops`, `maxTasksPerProcess`, `maxOpenProcesses`, `processDeadlineMs`,
 `processCostMicroUsd`, `minIntervalMs`, `maxConcurrencyPerAgent`, `enabledTargets`,
 `allowIrreversible`, `requireSecondActivator`, `memberSubmit`,
 `autoCommitTrustedNamespaces`, `messageBodyRetentionDays`, `providerClearance`,
@@ -345,3 +355,5 @@ argument mapping and a success test, used to settle unknown effects), `costCaps`
 | T13 | Card spoofing or swap | A remote agent's card changes to claim new abilities, or a look-alike card is served | Signature verification where present, URL and digest pinning, re-approval on change, administrator-only registration |
 | T14 | Request forgery through agent URLs | A card or a redirect points at an internal address | HTTPS only, host allow list, no private ranges, resolved address checked, no redirects to other hosts; push notification webhooks are not offered in v1 |
 | T15 | Injection through another agent's output | A remote agent returns text that tells ours to ignore its rules | Output is data, taints the task, is schema-checked where a skill defines a result, and approvals still show the exact action |
+| T16 | Authority laundering through a manager agent | A hostile message convinces a manager agent to approve a send, or to stop its report's safety check | A manager agent never satisfies an approval for an external write or an irreversible action (D19); its powers act on decisions and work, never on configuration, tools or budgets; every manager action is a ledger entry naming both agents |
+| T17 | Rewiring the hierarchy to gain authority | An editor makes a compromised agent the manager of a sender, or removes a manager to avoid oversight | Hierarchy changes need `orchestrator.activate` and are ledgered with before and after values; agents can only recommend; cycle, second-manager and unknown-agent changes are refused; an agent with no manager appears in the exceptions report |

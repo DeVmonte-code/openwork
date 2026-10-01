@@ -1,0 +1,102 @@
+[
+  {
+    "agent": {
+      "id": "agt_01j9z8q2k4m0",
+      "slug": "coordinator",
+      "displayName": "Operations coordinator",
+      "roleKind": "manager",
+      "state": "active"
+    },
+    "level": 0,
+    "span": 5,
+    "controlDegree": null,
+    "dependencyDegree": null,
+    "children": [
+      {
+        "agent": {
+          "id": "agt_01j9z8q2k4m6",
+          "slug": "digest",
+          "displayName": "Daily digest",
+          "roleKind": "monitor",
+          "state": "active"
+        },
+        "level": 1,
+        "span": 0,
+        "controlDegree": 1,
+        "dependencyDegree": 1,
+        "children": []
+      },
+      {
+        "agent": {
+          "id": "agt_01j9z8q2k4m1",
+          "slug": "intake",
+          "displayName": "Intake",
+          "roleKind": "dispatcher",
+          "state": "active"
+        },
+        "level": 1,
+        "span": 0,
+        "controlDegree": 2,
+        "dependencyDegree": 1,
+        "children": []
+      },
+      {
+        "agent": {
+          "id": "agt_01j9z8q2k4m2",
+          "slug": "research",
+          "displayName": "Research",
+          "roleKind": "worker",
+          "state": "active"
+        },
+        "level": 1,
+        "span": 0,
+        "controlDegree": 3,
+        "dependencyDegree": 3,
+        "children": []
+      },
+      {
+        "agent": {
+          "id": "agt_01j9z8q2k4m3",
+          "slug": "reviewer",
+          "displayName": "Reviewer",
+          "roleKind": "reviewer",
+          "state": "active"
+        },
+        "level": 1,
+        "span": 1,
+        "controlDegree": 4,
+        "dependencyDegree": 3,
+        "children": [
+          {
+            "agent": {
+              "id": "agt_01j9z8q2k4m4",
+              "slug": "drafter",
+              "displayName": "Drafter",
+              "roleKind": "worker",
+              "state": "active"
+            },
+            "level": 2,
+            "span": 0,
+            "controlDegree": 4,
+            "dependencyDegree": 4,
+            "children": []
+          }
+        ]
+      },
+      {
+        "agent": {
+          "id": "agt_01j9z8q2k4m5",
+          "slug": "sender",
+          "displayName": "Sender",
+          "roleKind": "executor",
+          "state": "active"
+        },
+        "level": 1,
+        "span": 0,
+        "controlDegree": 4,
+        "dependencyDegree": 4,
+        "children": []
+      }
+    ]
+  }
+]

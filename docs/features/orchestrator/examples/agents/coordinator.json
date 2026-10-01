@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "identity": {
+    "slug": "coordinator",
+    "displayName": "Operations coordinator",
+    "description": "Supervises the request-handling agents, decides what they escalate, and rebalances their work.",
+    "labels": ["sample"]
+  },
+  "role": {
+    "kind": "manager",
+    "responsibilities": [
+      "Decide the escalations and decisions its reports send up",
+      "Rebalance work between the agents it supervises",
+      "Hand anything it cannot decide to a person"
+    ],
+    "decisionAuthority": [
+      "Approve internal decisions its reports escalate",
+      "Stop or reassign the work of an agent it supervises",
+      "Never approves an external send; a person does"
+    ],
+    "accepts": [{"type": "escalation.raised"}, {"type": "decision.requested"}],
+    "produces": ["research.requested", "reply.review.requested"]
+  },
+  "instructions": {
+    "system": "Decide each escalation or decision request you receive using the playbooks. Approve only what is internal and reversible. Anything that sends something outside the organization goes to a person. When you cannot decide, say so and ask a person."
+  },
+  "model": {
+    "primary": {"providerId": "example-provider", "modelId": "example-model"}
+  },
+  "runtime": {"target": "headless", "mode": "event"},
+  "triggers": [{"kind": "task", "taskTypes": ["escalation.raised", "decision.requested"]}],
+  "tools": {
+    "orchestrator": [
+      "report_status", "ask_clarification", "answer_clarification", "delegate_task", "inspect_queue", "notify", "memory_read"
+    ]
+  },
+  "a2a": {
+    "exposure": "internal",
+    "skills": [
+      {
+        "id": "handle-escalation",
+        "name": "Handle an escalation",
+        "description": "Decides what to do about a problem an agent it supervises cannot resolve.",
+        "tags": ["escalation", "management"],
+        "examples": ["Research has failed three times on request r1; decide how to proceed"],
+        "taskType": "escalation.raised"
+      },
+      {
+        "id": "decide-request",
+        "name": "Decide a request",
+        "description": "Approves or declines an internal decision that an agent it supervises is not allowed to make alone.",
+        "tags": ["approval", "management"],
+        "examples": ["Approve rerunning the knowledge-base search with a wider scope"],
+        "taskType": "decision.requested"
+      }
+    ]
+  },
+  "permissions": {
+    "inputTrust": "trusted",
+    "dataClasses": ["public", "internal"],
+    "delegateTo": ["research", "reviewer", "sender"]
+  },
+  "memory": {"read": ["task", "org"], "write": ["task"], "orgNamespaces": ["playbooks"]},
+  "limits": {
+    "maxVisitsPerProcess": 2,
+    "cost": {
+      "perAttemptMicroUsd": 150000,
+      "perTaskMicroUsd": 300000,
+      "perDayMicroUsd": 3000000,
+      "perMonthMicroUsd": 30000000
+    }
+  }
+}

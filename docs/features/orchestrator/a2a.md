@@ -480,7 +480,7 @@ as A2A:
 | --- | --- |
 | `task.delegate` | `SendMessage` from the delegating agent (`ROLE_USER`) to the target's `tenant`; the target's server creates the task and returns it |
 | `task.status` | A `TaskStatusUpdateEvent` whose status message is from the agent (`ROLE_AGENT`) |
-| `task.clarify.request` | The task moves to `INPUT_REQUIRED` with the question as the status message |
+| `task.clarify.request` | The task moves to `INPUT_REQUIRED` with the question as the status message. With audience `manager`, the question is also delegated to the agent's manager as a `decision.requested` task ([hierarchy.md](hierarchy.md)); the manager's relationship is not published on any card |
 | `task.clarify.response` | A `SendMessage` with the same `taskId` and `contextId` |
 | `task.complete` | State `COMPLETED`; the result is an `Artifact` with a `text` summary and a `data` part |
 | `task.fail` | State `FAILED` (or `REJECTED`) with the reason as the status message |

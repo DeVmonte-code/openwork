@@ -1,0 +1,280 @@
+[
+  {
+    "agent": {
+      "id": "agt_01j9z8q2k4m0",
+      "slug": "coordinator",
+      "displayName": "Operations coordinator",
+      "roleKind": "manager",
+      "state": "active"
+    },
+    "level": 0,
+    "manager": null,
+    "relationshipType": null,
+    "controlDegree": null,
+    "dependencyDegree": null,
+    "dependencyName": null,
+    "reliesOn": null,
+    "managerMay": null,
+    "escalatesFromLevel": null,
+    "escalationPath": []
+  },
+  {
+    "agent": {
+      "id": "agt_01j9z8q2k4m6",
+      "slug": "digest",
+      "displayName": "Daily digest",
+      "roleKind": "monitor",
+      "state": "active"
+    },
+    "level": 1,
+    "manager": {
+      "id": "agt_01j9z8q2k4m0",
+      "slug": "coordinator",
+      "displayName": "Operations coordinator",
+      "roleKind": "manager",
+      "state": "active"
+    },
+    "relationshipType": "direct",
+    "controlDegree": 1,
+    "dependencyDegree": 1,
+    "dependencyName": "Very low",
+    "reliesOn": {
+      "instructions": "none",
+      "data": "none",
+      "approval": "none",
+      "resources": "none",
+      "exception_handling": "none",
+      "escalation": "occasional",
+      "final_validation": "none"
+    },
+    "managerMay": {
+      "see_outputs_and_logs": "yes",
+      "set_priorities": "none",
+      "assign_work": "none",
+      "approve_decisions": "none",
+      "stop_action": "none",
+      "override_decision": "none",
+      "reassign_work": "none"
+    },
+    "escalatesFromLevel": 5,
+    "escalationPath": [
+      "coordinator"
+    ]
+  },
+  {
+    "agent": {
+      "id": "agt_01j9z8q2k4m4",
+      "slug": "drafter",
+      "displayName": "Drafter",
+      "roleKind": "worker",
+      "state": "active"
+    },
+    "level": 2,
+    "manager": {
+      "id": "agt_01j9z8q2k4m3",
+      "slug": "reviewer",
+      "displayName": "Reviewer",
+      "roleKind": "reviewer",
+      "state": "active"
+    },
+    "relationshipType": "direct",
+    "controlDegree": 4,
+    "dependencyDegree": 4,
+    "dependencyName": "High",
+    "reliesOn": {
+      "instructions": "most",
+      "data": "key_items",
+      "approval": "most",
+      "resources": "most",
+      "exception_handling": "most",
+      "escalation": "most",
+      "final_validation": "most"
+    },
+    "managerMay": {
+      "see_outputs_and_logs": "yes",
+      "set_priorities": "binding",
+      "assign_work": "binding",
+      "approve_decisions": "most",
+      "stop_action": "yes",
+      "override_decision": "none",
+      "reassign_work": "yes"
+    },
+    "escalatesFromLevel": 3,
+    "escalationPath": [
+      "reviewer",
+      "coordinator"
+    ]
+  },
+  {
+    "agent": {
+      "id": "agt_01j9z8q2k4m1",
+      "slug": "intake",
+      "displayName": "Intake",
+      "roleKind": "dispatcher",
+      "state": "active"
+    },
+    "level": 1,
+    "manager": {
+      "id": "agt_01j9z8q2k4m0",
+      "slug": "coordinator",
+      "displayName": "Operations coordinator",
+      "roleKind": "manager",
+      "state": "active"
+    },
+    "relationshipType": "direct",
+    "controlDegree": 2,
+    "dependencyDegree": 1,
+    "dependencyName": "Very low",
+    "reliesOn": {
+      "instructions": "none",
+      "data": "none",
+      "approval": "none",
+      "resources": "none",
+      "exception_handling": "none",
+      "escalation": "occasional",
+      "final_validation": "none"
+    },
+    "managerMay": {
+      "see_outputs_and_logs": "yes",
+      "set_priorities": "advisory",
+      "assign_work": "request",
+      "approve_decisions": "none",
+      "stop_action": "none",
+      "override_decision": "none",
+      "reassign_work": "none"
+    },
+    "escalatesFromLevel": 5,
+    "escalationPath": [
+      "coordinator"
+    ]
+  },
+  {
+    "agent": {
+      "id": "agt_01j9z8q2k4m2",
+      "slug": "research",
+      "displayName": "Research",
+      "roleKind": "worker",
+      "state": "active"
+    },
+    "level": 1,
+    "manager": {
+      "id": "agt_01j9z8q2k4m0",
+      "slug": "coordinator",
+      "displayName": "Operations coordinator",
+      "roleKind": "manager",
+      "state": "active"
+    },
+    "relationshipType": "direct",
+    "controlDegree": 3,
+    "dependencyDegree": 3,
+    "dependencyName": "Moderate",
+    "reliesOn": {
+      "instructions": "key_items",
+      "data": "occasional",
+      "approval": "key_items",
+      "resources": "occasional",
+      "exception_handling": "key_items",
+      "escalation": "key_items",
+      "final_validation": "key_items"
+    },
+    "managerMay": {
+      "see_outputs_and_logs": "yes",
+      "set_priorities": "binding",
+      "assign_work": "binding",
+      "approve_decisions": "important",
+      "stop_action": "none",
+      "override_decision": "none",
+      "reassign_work": "none"
+    },
+    "escalatesFromLevel": 4,
+    "escalationPath": [
+      "coordinator"
+    ]
+  },
+  {
+    "agent": {
+      "id": "agt_01j9z8q2k4m3",
+      "slug": "reviewer",
+      "displayName": "Reviewer",
+      "roleKind": "reviewer",
+      "state": "active"
+    },
+    "level": 1,
+    "manager": {
+      "id": "agt_01j9z8q2k4m0",
+      "slug": "coordinator",
+      "displayName": "Operations coordinator",
+      "roleKind": "manager",
+      "state": "active"
+    },
+    "relationshipType": "direct",
+    "controlDegree": 4,
+    "dependencyDegree": 3,
+    "dependencyName": "Moderate",
+    "reliesOn": {
+      "instructions": "key_items",
+      "data": "occasional",
+      "approval": "key_items",
+      "resources": "occasional",
+      "exception_handling": "key_items",
+      "escalation": "key_items",
+      "final_validation": "key_items"
+    },
+    "managerMay": {
+      "see_outputs_and_logs": "yes",
+      "set_priorities": "binding",
+      "assign_work": "binding",
+      "approve_decisions": "most",
+      "stop_action": "yes",
+      "override_decision": "none",
+      "reassign_work": "yes"
+    },
+    "escalatesFromLevel": 3,
+    "escalationPath": [
+      "coordinator"
+    ]
+  },
+  {
+    "agent": {
+      "id": "agt_01j9z8q2k4m5",
+      "slug": "sender",
+      "displayName": "Sender",
+      "roleKind": "executor",
+      "state": "active"
+    },
+    "level": 1,
+    "manager": {
+      "id": "agt_01j9z8q2k4m0",
+      "slug": "coordinator",
+      "displayName": "Operations coordinator",
+      "roleKind": "manager",
+      "state": "active"
+    },
+    "relationshipType": "direct",
+    "controlDegree": 4,
+    "dependencyDegree": 4,
+    "dependencyName": "High",
+    "reliesOn": {
+      "instructions": "most",
+      "data": "key_items",
+      "approval": "most",
+      "resources": "most",
+      "exception_handling": "most",
+      "escalation": "most",
+      "final_validation": "most"
+    },
+    "managerMay": {
+      "see_outputs_and_logs": "yes",
+      "set_priorities": "binding",
+      "assign_work": "binding",
+      "approve_decisions": "most",
+      "stop_action": "yes",
+      "override_decision": "none",
+      "reassign_work": "yes"
+    },
+    "escalatesFromLevel": 2,
+    "escalationPath": [
+      "coordinator"
+    ]
+  }
+]

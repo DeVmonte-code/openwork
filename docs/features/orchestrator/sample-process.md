@@ -23,6 +23,10 @@ Configurations are in `examples/agents/`. Each validates against the schema in
 | Reviewer | `reviewer.json` | event | `reply.review.requested` | no | `kb.search` (read) | Sender, or Drafter for a revision |
 | Sender | `sender.json` | event | `reply.send.requested` | no | `mail.find_sent` (read), `mail.send_reply` (external write) | none |
 | Daily digest | `digest.json` | schedule, daily 08:00 UTC | the clock | no | `inspect_queue`, `notify` | none |
+| Operations coordinator | `coordinator.json` | event | `escalation.raised`, `decision.requested` | no | `delegate_task`, `inspect_queue`, `notify` | Research, Reviewer or Sender, when it rebalances work |
+
+The happy path below runs on the first six. The coordinator is not on it: it supervises them
+and answers escalations, which the variations use.
 
 Every agent that accepts work has an Agent Card, generated from its configuration
 (the `a2a` block in each file; the research agent's card is in
@@ -138,6 +142,17 @@ The ledger shows the decline.
 If the Sender's day limit of $1 were reached, the next reservation would fail as
 a `policy` failure, the agent would be paused as "Budget reached", and an owner
 would be notified. Nothing retries a denied spend.
+
+### A decision above the reviewer's authority
+
+The reviewer reports to the coordinator (control High, relies on it at Moderate, escalates from
+impact level 3). When a draft would commit the organization to something, the reviewer
+calls `ask_clarification` with audience `manager`. The question reaches the coordinator as a
+`decision.requested` task. The coordinator may approve an internal step, such as sending the
+draft back with a note, but it cannot approve the send: that remains the Sender's person
+approval. If the coordinator is paused, the question moves to the next manager up, and with
+none running it appears in "Needs you". The full organization is in
+[hierarchy.md](hierarchy.md), where the drafter sits under the reviewer.
 
 ### The morning digest
 

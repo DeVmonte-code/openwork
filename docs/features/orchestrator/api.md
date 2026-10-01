@@ -133,6 +133,42 @@ Approval decisions are not exposed through MCP or to any agent-mediated client.
 They require a signed-in person (`userSessionRoute()`), because the point is that
 a person saw the exact action.
 
+## Hierarchy
+
+Who reports to whom, and the five reports. The rules and the shapes of the responses are in
+[hierarchy.md](hierarchy.md); every report is computed when read, so a response is always
+consistent with the relationships at that moment.
+
+| Method and path | Purpose | Permission |
+| --- | --- | --- |
+| `GET /v1/orchestrator-hierarchy` | The tree: each agent with its manager, span, level and the control and dependency degrees on its edge. Add `?format=register` for the flat agent register | `view` |
+| `GET /v1/orchestrator-reporting-relationships` | List relationships. Filter by `managerAgentId`, `reportingAgentId`, `state` | `view` |
+| `POST /v1/orchestrator-reporting-relationships` | Add: `{ managerAgentId, reportingAgentId, controlDegree, dependencyDegree, escalation }`. `relationshipType` is always `direct` | `activate` |
+| `PATCH /v1/orchestrator-reporting-relationships/{relationshipId}` | Change degrees or escalation; needs the current `revision` | `activate` |
+| `POST /v1/orchestrator-reporting-relationships/{relationshipId}/end` | End it (kept in history, never deleted). The agent has no manager until another is set | `activate` |
+| `POST /v1/orchestrator-reporting-relationships/reassign` | Move an agent to a different manager in one step: `{ reportingAgentId, newManagerAgentId, controlDegree?, dependencyDegree? }`. The old relationship ends and the new one starts together, or nothing changes | `activate` |
+| `POST /v1/orchestrator-reporting-relationships/validate` | Check a proposed change without saving it; returns every refusal and every warning, including what the span would become | `view` |
+| `GET /v1/orchestrator-agents/{agentId}/reports` | The agent's direct reports with control and dependency, plus the span (the "manager to controlled agents" view). `?include=indirect` adds the rest of the subtree | `view` |
+| `GET /v1/orchestrator-agents/{agentId}/manager` | The agent's manager, dependency degree, escalation rule and the whole chain to the root (the "agent to its manager" view) | `view` |
+| `GET /v1/orchestrator-reports/span-of-control` | Span report: every manager, its reports, span, limit, and queued and running work | `view` |
+| `GET /v1/orchestrator-reports/dependency` | Dependency report: every agent, its manager, the degrees and its escalation path | `view` |
+| `GET /v1/orchestrator-reports/hierarchy-exceptions` | Exceptions: no manager, over the limit, dependent on an unavailable manager, large gaps | `view` |
+| `GET /v1/orchestrator-reports/relationship-matrix` | Managers by reporting agents, each cell control / dependency | `view` |
+
+Notes:
+
+- A change takes effect for new routing at once. Work already in flight keeps the route it was
+  given; escalations raised after the change follow the new chain.
+- A refused change returns `422` with every reason (`issues[]`), not only the first, and
+  writes nothing. The codes are in [hierarchy.md](hierarchy.md), "What is refused and what is
+  flagged". A change that is allowed but flagged returns `200` with `warnings[]`.
+- Each write is a ledger entry (`hierarchy.*`) with the before and after values, in the same
+  transaction as the change. Concurrent edits are serialised per organization, so two people
+  cannot each add a "first" manager for the same agent; the second gets `version_conflict`.
+- The two policy settings are edited with the rest of the policy, `PATCH /v1/orchestrator-policy`.
+- The reports are also on the live stream: a hierarchy change sends
+  `{ "type": "hierarchy" }` and the client refetches.
+
 ## Memory
 
 | Method and path | Purpose | Permission |
@@ -176,7 +212,7 @@ a person saw the exact action.
 The stream follows the Automations runner pattern in
 `docs/features/automations-desktop-runner/README.md`: it carries only a wake-up
 and a resumable cursor, never data. A client that receives
-`{ "type": "agents" | "tasks" | "approvals" | "attention", "cursor": "…" }`
+`{ "type": "agents" | "tasks" | "approvals" | "attention" | "hierarchy", "cursor": "…" }`
 refetches the affected query. Keepalive every 15 seconds. A client that cannot
 hold the stream polls with backoff from 1 to 15 seconds. The app shows the time
 of the last successful read, so a stale view says so.
@@ -270,6 +306,11 @@ the summaries and descriptions written for these routes are text agents read.
 | 422 | `validation_failed` | Config failed validation (`issues[]`) |
 | 429 | `queue_full`, `rate_limited` | Depth or rate cap reached |
 | 503 | `unavailable` | The database could not commit; nothing was acknowledged |
+
+Hierarchy refusals use the codes in [hierarchy.md](hierarchy.md) (`self_report`, `cycle`,
+`duplicate_relationship`, `second_manager`, `root_cannot_report`, `unknown_agent`,
+`retired_agent`, `has_active_reports`, `span_over_limit` in `block` mode) inside a
+`422 validation_failed` response.
 
 Delegation refusals reuse the guard names as codes: `hop_limit`, `visit_limit`,
 `fanout_limit`, `process_task_limit`, `invalid_payload`, `target_not_accepting`.

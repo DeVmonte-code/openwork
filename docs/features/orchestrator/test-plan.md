@@ -2,7 +2,7 @@
 
 Status: proposal. Part of [the orchestrator plan](README.md). Covers brief step 11.
 
-The ids below (L, C, R, O, A, P, G, J) are the ones the other documents cite.
+The ids below (L, C, R, O, A, P, X, G, H, J) are the ones the other documents cite.
 Alerts are `AL1` to `AL13` and runbooks `RB1` to `RB10`, both in
 [operations.md](operations.md), so the three sets never share a name. A
 test is "done" when it is automated and, for anything a person could be asked to
@@ -26,7 +26,7 @@ happened, so a pass cannot mean "nothing was exercised"
 Properties to assert generically, in the domain layer, over generated sequences
 of events: no illegal transition; invariants I1 to I10 from
 [architecture.md](architecture.md) hold after every step; terminal states never
-change except the documented dead-letter requeue.
+change: a retry creates a new task that references the old one (D15).
 
 ## L: lifecycle
 
@@ -139,6 +139,40 @@ Protocol design in [a2a.md](a2a.md).
 | G6 | Kill switch | No claims after engage; live attempts cancelled within 20 seconds; Resume all restores exactly the agents it paused |
 | G7 | Secrets | Configs and memory reject secret-shaped strings; no credential in model context, messages or logs |
 
+## H: management hierarchy
+
+Rules in [hierarchy.md](hierarchy.md). These are pure functions, so they run in the domain
+layer on every PR (`packages/agent-orchestrator/src/hierarchy.test.ts`), with no database. The
+plan's reference implementation passes 97 checks, which the table groups. Each row also runs
+over the Hierarchy routes in the service layer once they exist (M3), to prove the routes
+enforce the same rules and write one ledger entry per change.
+
+| Id | Scenario | Expected |
+| --- | --- | --- |
+| H1 | The register | Every agent has a unique id and slug and a defined role; every relationship record validates; each non-root agent has exactly one direct manager; the root has none |
+| H2 | Span of control | The coordinator's span is 5, the reviewer's 1, an agent with no reports 0; indirect reports are never counted; drafts and retired agents do not count and paused ones do |
+| H3 | Both directions | A manager lists each direct report with control and dependency; an agent shows its manager, its dependency degree and the whole chain to the root; the two degrees are stored separately |
+| H4 | What is refused | Self-report, a two-step and a three-step loop (the path is named), the root being given a manager, a duplicate relationship, a second manager, an unknown agent and a retired agent; each refusal writes nothing |
+| H5 | Out-of-scale values | Control 0 and 6, dependency 2.5 and -1 are rejected; only `direct` is stored; the schema accepts exactly 1 to 5 |
+| H6 | The span limit | In `flag` mode a change past the limit succeeds with a warning and appears in the exceptions report; in `block` mode it is refused |
+| H7 | Reassigning | Both spans are recalculated; the old relationship is ended, not deleted, and keeps its history; the agent keeps exactly one active manager; the chain follows the move; moving a manager below its own report is refused as a loop; the root cannot be moved |
+| H8 | Removing agents | Retiring a manager that still supervises agents is refused; retiring an agent ends its relationship and recalculates the span; a retired agent cannot be given a manager |
+| H9 | Several levels and bad data | Spans count only direct reports at every level; levels are reported from the root; a loop or two managers injected into stored data terminates the reports and is named in the exceptions report |
+| H10 | Exceptions | A healthy hierarchy has none; an agent without a manager, a missing root, a manager over the limit, a report relying on a paused manager, and a large control and dependency gap are each reported, most serious first; a draft with no manager is not flagged |
+| H11 | The five outputs | The diagram, span report, dependency report, exceptions and matrix are produced from the same state; the numbers agree with each other; none depends on input order |
+| H12 | The scales | Both scales define every degree; a higher control degree never grants less and a higher dependency degree never relies on less; only the top control degree can override a decision; "change who the agent reports to" is not a manager power |
+| H13 | Decisions and escalation | Escalation starts at the configured impact level; approval need rises with the control degree; a manager agent never replaces a person on an external write or an irreversible action; escalation goes to the nearest running manager, then upward, then to a person |
+| H14 | The documents are the code | Every published example in `examples/hierarchy/` equals what the code produces; the tables in [hierarchy.md](hierarchy.md) are generated from them |
+
+Service-layer additions (M3 onward):
+
+- Two concurrent requests that each add a first manager for the same agent: one succeeds, the
+  other gets `version_conflict`; the unique index on active relationships holds.
+- Changing the hierarchy without `orchestrator.activate` is refused and the attempt is
+  written to the ledger; reading it needs only `orchestrator.view`.
+- A manager agent attempts to approve an external send; the approval stays pending (D19).
+- Every write has exactly one `hierarchy.*` ledger entry with before and after values.
+
 ## Journey specs
 
 Written in the shape `write-a-spec` asks for: a persona in the title, steps that
@@ -186,6 +220,19 @@ only, and bounded waits.
 4. when the operator resumes all
 5. after: only the agent that was running before comes back; the individually paused one stays paused
 
+### J6 An administrator reorganizes the agents and the reports follow
+
+1. given the seven sample agents, the coordinator at the top, and a signed-in administrator
+2. when the administrator opens Hierarchy
+3. then the tree shows the coordinator with five direct reports and "Manages 5 of 7", and the drafter under the reviewer
+4. when the administrator changes the drafter's manager to the coordinator
+5. after: the coordinator shows "Manages 6 of 7", the reviewer shows 0, and an Undo is offered
+6. when the administrator tries to make the coordinator report to the drafter
+7. then the dialog refuses with the reporting loop named, the Change button is disabled and nothing changed (witness: the ledger has no entry for the attempt)
+8. when a new agent is created without a manager
+9. after: Exceptions carries a count of 1 naming it, and choosing a manager clears it
+10. negative: a member without the right sees the tree and the reports, and the controls show a lock with who can change them
+
 ## Load and soak
 
 - **Load.** 100 agents, 50 concurrent attempts, 100,000 tasks a day for 24
@@ -210,6 +257,6 @@ only, and bounded waits.
 
 ## Exit criteria for this plan's testing
 
-All of L, C, R, A, P and G automated and green; J1 to J5 green and published as
+All of L, C, R, A, P, X, G and H automated and green; J1 to J6 green and published as
 PR evidence; O3 and O4 green; the load test run once with its results recorded.
 Nothing proceeds to the pilot with a red or skipped item in this list.

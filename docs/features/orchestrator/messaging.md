@@ -59,7 +59,7 @@ same ids and actors.
 
 ```ts
 import { z } from "zod"
-import { errorClassSchema, riskTierSchema } from "./agent-config"
+import { errorClassSchema, riskTierSchema, roleKindSchema } from "./agent-config"
 
 /** Den TypeIDs look like `<prefix>_<suffix>`; the prefixes here are illustrative until M2. */
 const idSchema = z.string().regex(/^[a-z]{2,12}_[0-9a-z]{8,40}$/)
@@ -81,7 +81,7 @@ export const actorSchema = z.discriminatedUnion("kind", [
 /** Agents never address a process directly; the orchestrator resolves the address to one agent. */
 export const addressSchema = z.discriminatedUnion("kind", [
   z.strictObject({ kind: z.literal("agent"), agentId: idSchema }),
-  z.strictObject({ kind: z.literal("role"), role: z.enum(["dispatcher", "worker", "reviewer", "executor", "monitor", "custom"]) }),
+  z.strictObject({ kind: z.literal("role"), role: roleKindSchema }),
   z.strictObject({ kind: z.literal("member"), memberId: idSchema }),
   z.strictObject({ kind: z.literal("thread") }),
 ])
@@ -114,7 +114,8 @@ const bodies = {
     progress: z.number().min(0).max(1).optional(),
   }),
   "task.clarify.request": z.strictObject({
-    audience: z.enum(["delegator", "human"]),
+    /** `manager` asks the agent's direct manager; if it is unavailable the question moves up the chain, then to a person. */
+    audience: z.enum(["delegator", "manager", "human"]),
     question: z.string().min(1).max(1_000),
     options: z.array(z.string().min(1).max(200)).max(8).optional(),
     expiresAt: timestampSchema.optional(),
@@ -140,7 +141,7 @@ const bodies = {
 export const outboundMessageSchema = z.discriminatedUnion("type", [
   z.strictObject({ type: z.literal("task.delegate"), to: z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("agent"), agentId: idSchema }),
-    z.strictObject({ kind: z.literal("role"), role: z.enum(["dispatcher", "worker", "reviewer", "executor", "monitor", "custom"]) }),
+    z.strictObject({ kind: z.literal("role"), role: roleKindSchema }),
   ]), stepKey: z.string().min(1).max(100).optional(), body: bodies["task.delegate"] }),
   z.strictObject({ type: z.literal("task.reject"), body: bodies["task.reject"] }),
   z.strictObject({ type: z.literal("task.status"), body: bodies["task.status"] }),
@@ -337,6 +338,12 @@ a process, host or URL.
   It answers with `task.clarify.response`, which returns the child to `queued`
   and the parent to `waiting_children`. A parent that is not waiting cannot be
   asked; the agent should ask a person instead.
+- **Clarification to a manager.** `audience: "manager"` sends the question to the asking
+  agent's manager as a `decision.requested` task, which the manager's configuration must
+  accept. If the manager is not `active`, the question moves up the reporting chain; past the
+  root it becomes a "Needs you" item for a person. The manager answers with
+  `task.clarify.response`. See [hierarchy.md](hierarchy.md). An agent with no manager cannot
+  use this audience (`no_manager`).
 - **Questions expire.** An unanswered question expires with `expiresAt` or the
   task deadline, and the escalation rules run.
 - **Completion.** The `result` must pass the accepting agent's `resultSchema`

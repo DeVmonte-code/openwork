@@ -1,0 +1,117 @@
+{
+  "degreeNames": {
+    "1": "Very low",
+    "2": "Low",
+    "3": "Moderate",
+    "4": "High",
+    "5": "Full"
+  },
+  "controlMeaning": {
+    "1": "The agent operates almost independently.",
+    "2": "The manager provides occasional direction.",
+    "3": "The manager approves important decisions.",
+    "4": "The manager directs priorities and approves most actions.",
+    "5": "The agent cannot make or execute relevant decisions without the manager's approval."
+  },
+  "dependencyMeaning": {
+    "1": "Works almost independently of its manager.",
+    "2": "Looks to its manager for occasional direction.",
+    "3": "Waits for its manager on important decisions.",
+    "4": "Takes priorities from its manager and waits for approval on most actions.",
+    "5": "Cannot make or execute relevant decisions without its manager."
+  },
+  "controlTable": {
+    "1": {
+      "see_outputs_and_logs": "yes",
+      "set_priorities": "none",
+      "assign_work": "none",
+      "approve_decisions": "none",
+      "stop_action": "none",
+      "override_decision": "none",
+      "reassign_work": "none"
+    },
+    "2": {
+      "see_outputs_and_logs": "yes",
+      "set_priorities": "advisory",
+      "assign_work": "request",
+      "approve_decisions": "none",
+      "stop_action": "none",
+      "override_decision": "none",
+      "reassign_work": "none"
+    },
+    "3": {
+      "see_outputs_and_logs": "yes",
+      "set_priorities": "binding",
+      "assign_work": "binding",
+      "approve_decisions": "important",
+      "stop_action": "none",
+      "override_decision": "none",
+      "reassign_work": "none"
+    },
+    "4": {
+      "see_outputs_and_logs": "yes",
+      "set_priorities": "binding",
+      "assign_work": "binding",
+      "approve_decisions": "most",
+      "stop_action": "yes",
+      "override_decision": "none",
+      "reassign_work": "yes"
+    },
+    "5": {
+      "see_outputs_and_logs": "yes",
+      "set_priorities": "binding",
+      "assign_work": "binding",
+      "approve_decisions": "all",
+      "stop_action": "yes",
+      "override_decision": "yes",
+      "reassign_work": "yes"
+    }
+  },
+  "dependencyTable": {
+    "1": {
+      "instructions": "none",
+      "data": "none",
+      "approval": "none",
+      "resources": "none",
+      "exception_handling": "none",
+      "escalation": "occasional",
+      "final_validation": "none"
+    },
+    "2": {
+      "instructions": "occasional",
+      "data": "none",
+      "approval": "none",
+      "resources": "none",
+      "exception_handling": "occasional",
+      "escalation": "occasional",
+      "final_validation": "none"
+    },
+    "3": {
+      "instructions": "key_items",
+      "data": "occasional",
+      "approval": "key_items",
+      "resources": "occasional",
+      "exception_handling": "key_items",
+      "escalation": "key_items",
+      "final_validation": "key_items"
+    },
+    "4": {
+      "instructions": "most",
+      "data": "key_items",
+      "approval": "most",
+      "resources": "most",
+      "exception_handling": "most",
+      "escalation": "most",
+      "final_validation": "most"
+    },
+    "5": {
+      "instructions": "all",
+      "data": "all",
+      "approval": "all",
+      "resources": "all",
+      "exception_handling": "all",
+      "escalation": "all",
+      "final_validation": "all"
+    }
+  }
+}

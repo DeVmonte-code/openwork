@@ -40,6 +40,7 @@ Routes render through `SessionRoute` to keep the sidebar shell.
 | `/orchestrator` | Agents list, with "Needs you" above it when non-empty |
 | `/orchestrator/tasks` | Tasks across agents, filterable |
 | `/orchestrator/tasks/:taskId` | Task timeline; the approval card sits at the top when one is pending |
+| `/orchestrator/hierarchy` | Who reports to whom, with the span, dependency, exceptions and matrix reports (`?report=span\|dependency\|exceptions\|matrix`) |
 | `/orchestrator/activity` | Governance ledger |
 | `/orchestrator/agents/:agentId` | One agent |
 | `/orchestrator/agents/:agentId/edit` | Configuration editor and version history |
@@ -62,6 +63,7 @@ apps/app/src/react-app/domains/orchestrator/
   agents-view.tsx  needs-you-list.tsx  agent-detail.tsx
   agent-editor.tsx  version-history.tsx  validation-report.tsx
   tasks-view.tsx  task-timeline.tsx  approval-card.tsx
+  hierarchy-view.tsx  hierarchy-tree.tsx  hierarchy-reports.tsx  change-manager-dialog.tsx
   activity-view.tsx  kill-switch.tsx
 ```
 
@@ -175,6 +177,70 @@ order, for example "Research found 3 facts · 41 s" and "Sender asked for
 approval · 12 min". A finished process collapses to one line: "Finished in 14
 min · 6 agents · $0.31". Raw envelopes and arguments sit under Technical details.
 
+### Hierarchy
+
+Who supervises whom ([hierarchy.md](hierarchy.md)). It is a second page of the Orchestrator,
+beside Agents, Tasks and Activity, because it answers a different question: not "what is
+each agent doing" but "who decides, and where does a problem go".
+
+The focal element is the **tree** (P7): one row per agent, indented under its manager,
+40 to 48 px (S2). A row shows the name with role in muted text, the state, and, for a
+manager, "Manages 5". A chevron collapses a branch (S3). The root has no indent. An agent
+with no manager is listed under **Without a manager**, never hidden.
+
+```
+Orchestrator   Agents   Tasks   Hierarchy   Activity                  Span · Dependency · Exceptions 2 · Matrix
+
+▾ Operations coordinator   Manager · Running                       Manages 5 of 7
+    Daily digest           Running            Control Very low · Relies on it Very low
+    Intake                 Running            Control Low · Relies on it Very low
+    Research               Running            Control Moderate · Relies on it Moderate
+  ▾ Reviewer               Running                                 Manages 1
+      Drafter              Running            Control High · Relies on it High
+    Sender                 Running            Control High · Relies on it High
+
+Without a manager
+    Archivist              Running                                 Choose a manager
+```
+
+- **Selecting an agent** opens a panel on the right with both directions. **Reports to**
+  shows the manager, how much the agent relies on it, the level at which it escalates, and
+  the whole chain to the top. **Manages** shows its direct reports with the two levels for
+  each, and the count against the limit. Nothing here is a second card inside a card (S1).
+- **Counts, not diagrams.** The tree is the diagram. A **Diagram** toggle shows the same data
+  as a node-and-edge picture for presenting or exporting, with the same labels on the edges.
+- **Reports.** The four report views sit behind the tab row on the right of the sub-navigation.
+  Each is a dense table with the same wording as [hierarchy.md](hierarchy.md): Span (manager,
+  reports, count, limit, queued and running work), Dependency (agent, manager, level,
+  escalation path), Exceptions (severity, what, the agent or manager concerned, and the
+  action that fixes it), and Matrix (managers by reporting agents, each cell showing the two
+  levels, with the level names on hover and as text for screen readers). Each can be
+  exported as CSV or JSON.
+- **Exceptions mark the tab, not the page.** The tab carries a small count when something
+  needs attention. A manager over the limit shows a muted "Over the limit" next to its
+  count, not a red banner; red stays reserved for failures (V2).
+
+**Changing a manager.** "Change manager" is on the row menu and in the agent detail. It
+opens one dialog (P5, `Dialog`) with the agent's name as the title and three controls:
+the new manager, **How much the manager controls** and **How much the agent relies on it**
+(five named levels each, shown as a selector with the meaning of the chosen level in muted
+text), and the level at which the agent escalates. The dialog calls `validate` as the person
+chooses, and shows the result in one line under the controls:
+
+- A refusal shows the message the server returns, which names the reason and, where one
+  exists, the way out: "Intake already reports to Operations coordinator. An agent has one
+  direct manager." "This would create a reporting loop: Operations coordinator → Reviewer →
+  Operations coordinator." "Reviewer still supervises 1 agent. Reassign them first."
+- A warning does not stop the change: "Operations coordinator would have 8 direct reports;
+  the limit is 7."
+- The button is named for the action: **Change manager** (C1, C2). It is disabled while a
+  refusal is showing, with the reason visible rather than only a tooltip.
+
+The change is immediate, with an **Undo** in the toast (P8), because it is recorded in the
+ledger and can be reversed. Without `orchestrator.activate` the controls show a lock with
+who can change it (P4, C5). Agents cannot change the hierarchy from the interface either:
+there is no agent-readable command for it.
+
 ### Activity
 
 The ledger in plain sentences with the actor and time: "Ana activated Sender
@@ -217,6 +283,13 @@ Technical details.
 | `waiting_input` | Waiting for an answer |
 | `waiting_children` | Waiting on other agents |
 | A2A skill | Request it handles |
+| Manager | Manager (role); "Reports to" |
+| Direct reports | "Manages" |
+| Span of control | "Manages 5 of 7" in rows; "Span of control" as the report's title |
+| Control degree | "How much the manager controls", with the level name (Very low to Full) |
+| Dependency degree | "How much the agent relies on its manager", with the level name |
+| `no_manager` | "Without a manager" |
+| `dependent_on_unavailable_manager` | "Relies on a manager that is paused" |
 | Agent Card | Listing |
 | `succeeded` | Done |
 | `failed` | Failed |
@@ -238,6 +311,7 @@ Blocked and locked states use neutral ink and a lock (C5). Red is reserved for
 | Cancel, discard a dead letter, delete a memory entry | Confirm |
 | Approve an external action | The consent card is the confirmation |
 | Pause everything | Confirm, naming how many agents and tasks it affects; "Resume all" restores exactly those |
+| Change manager, end a reporting relationship | Immediate, with "Undo"; the dialog shows the refusal or warning before the person commits |
 
 ## States
 
@@ -246,7 +320,7 @@ Each view designs and shows these (the "States" section of `DESIGN.md`):
 | State | What shows |
 | --- | --- |
 | Loading | Skeleton rows in the final layout, not "Loading…" |
-| Empty | An invitation with the five starting points: "Create your first agent" |
+| Empty | An invitation with the five starting points: "Create your first agent". On the Hierarchy page with agents but no manager chosen: "Choose a top-level agent" |
 | Error | What happened and the next action: "Couldn't load agents · Try again" |
 | Blocked | A lock, the reason and the owner: "Changing agents is part of Enterprise · Ask an owner" or "Only admins can change agents · Ask an admin" |
 | Offline | The last known state with its age: "Last updated 2 min ago · Reconnecting" |
@@ -267,13 +341,13 @@ and the query and command kinds. Register, in the orchestrator domain:
 
 | Id | Kind | Notes |
 | --- | --- | --- |
-| `orchestrator.list_agents`, `orchestrator.get_agent`, `orchestrator.list_attention` | query | Concurrent, side-effect-free, do not focus the window |
+| `orchestrator.list_agents`, `orchestrator.get_agent`, `orchestrator.list_attention`, `orchestrator.get_hierarchy` | query | Concurrent, side-effect-free, do not focus the window |
 | `orchestrator.open` | command | Navigation only |
 | `orchestrator.pause_agent`, `orchestrator.resume_agent` | command | `effects` declares durable change; no confirmation |
 | `orchestrator.stop_agent` | command | `confirmation` required |
 
-There is deliberately **no** command to approve or decline. Approving is a
-person's act, and an agent driving the UI must not be able to perform it.
+There is deliberately **no** command to approve or decline, and none to change the
+hierarchy. Both are a person's act, and an agent driving the UI must not be able to perform them.
 
 ## Keyboard and accessibility
 
@@ -294,12 +368,12 @@ rows use literals; the new row should not.
 | --- | --- |
 | P1 Show state | Rows report state ("Waiting for approval", "$0.42 today"); no explanatory sentences in the first viewport |
 | P2 Title or description | One page title; rows and cards carry one of the two |
-| P3 Progressive disclosure | Retry, escalation, memory, JSON and ids sit under Advanced and Technical details |
+| P3 Progressive disclosure | Retry, escalation, memory, JSON and ids sit under Advanced and Technical details. On the Hierarchy page the reports are one tab away from the tree, and the diagram is a toggle |
 | P4 Presence with a lock | Blocked parts stay visible with reason and owner |
 | P5 Reuse | `SidebarDestination` and `@/components` primitives; no hand-rolled controls |
 | P6 Density | Compact rows, 40 to 48 px, hairlines |
-| P7 One focal element | The agent list; the consent card while a decision is pending |
-| P8 Undo over confirm | Undo toasts; confirms only for stop, retire, cancel, discard, delete, and approving external actions |
+| P7 One focal element | The agent list; the consent card while a decision is pending; the tree on the Hierarchy page |
+| P8 Undo over confirm | Undo toasts (including for changing a manager); confirms only for stop, retire, cancel, discard, delete, and approving external actions |
 | P9 Consent | Action, data, risk, reversibility in one card |
 | P10 Evidence | Screenshots at real size for every state below, plus the journey specs in [test-plan.md](test-plan.md) |
 | P11 Continuity | Starting an agent shows the agent row in place, never a "Setting up…" screen |
@@ -311,7 +385,7 @@ rows use literals; the new row should not.
 ## Evidence to attach to the UI pull requests
 
 Screenshots at real size: the agents list with working, idle and paused rows;
-the empty state; the consent card; the card after approval ("Sent"); the agent
+the empty state; the hierarchy tree with one branch collapsed; the panel showing both directions; each of the four reports; the change-manager dialog with a refusal and with a warning; the consent card; the card after approval ("Sent"); the agent
 detail; the editor with a validation error; the version compare; the blocked
 state for a member; the offline state; and the sidebar row with and without the
 attention marker.
