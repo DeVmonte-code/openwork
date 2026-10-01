@@ -126,13 +126,69 @@ organization, 50 concurrent attempts, 100,000 tasks a day per cluster, at most
 ### Profiles
 
 The brief leaves the environment open: Azure, on-premises or hybrid. The plan
-builds on what exists and supports all three.
+builds on what exists and supports all of them. **The pilot uses the first row,
+chosen because the team has full control of it and it runs on one local device
+with nothing outside the machine required** (decision D13).
 
 | Profile | What runs where | Basis |
 | --- | --- | --- |
+| Local single node (pilot) | Den API with the reconciler, Den web, MySQL and one headless runner on one machine the team controls, started with Docker Compose | `packaging/docker/docker-compose.eval.yml`, `packaging/docker/den-dev-up.sh`, `packages/docs/self-host/evaluate-with-docker-compose.mdx` |
 | Hosted | Den and runners operated by OpenWork | Existing hosted Den |
 | Self-hosted | Den, reconciler, MySQL and runners in the customer's Kubernetes cluster | `packaging/helm/openwork-ee`; guides `docs/aws-eks-helm.md`, `docs/azure-aks-helm.md`, `docs/gcp-gke-helm.md` (managed MySQL 8-compatible database in each) |
 | Hybrid | Den hosted or self-hosted; `headless` runners inside the customer network pulling work over outbound HTTPS | Pull model of `docs/features/automations-desktop-runner/README.md`; needs the runner protocol in [api.md](api.md) |
+
+### Local single-device profile (the pilot)
+
+Why this one: the team owns the machine, the database and every secret, so
+nothing is out of reach when something needs inspecting. Nothing outside the
+machine is required to run it: the Den stack uses `PROVISIONER_MODE=stub`, so no
+cloud workers are created; the headless runner is the only runner; no inbound
+port is opened; and the code paths are the same ones production uses.
+
+| Component | Source | Notes |
+| --- | --- | --- |
+| MySQL 8.4 | The Compose stacks in `packaging/docker/` | One Docker volume. This volume **is** the queue, the configs and the ledger |
+| Den API, `role: all` | `Dockerfile.den`; published image in the evaluation stack | Runs the API and the reconciler together |
+| Den web | `Dockerfile.den-web` | `http://localhost:3005`; approvals and the Orchestrator tab are reached here, or from the desktop or web app by setting the on-premises server URL on its sign-in screen |
+| Headless runner | `ee/apps/headless-runner`, started as a Node process or a container | One instance; SQLite file on a persistent path (`HEADLESS_DB_PATH`); private, reached only by Den. **Not packaged yet**: a Dockerfile and a Compose overlay are an M6 deliverable |
+| Model access | One of the options below | Needed by the runner |
+| Connections for the sample | Small mock MCP servers for inbox, knowledge base and mail | The sample uses mocks; `mcpMock()` in `evals/packages/env/src/mock.ts` is the template. The existing Enterprise MCP Mock Lab models ticketing and Microsoft surfaces, not an inbox |
+
+**Model access.** The runner speaks the Anthropic Messages or OpenAI Chat
+Completions protocol to `HEADLESS_MODEL_BASE_URL`. For one machine:
+
+1. *OpenWork Gateway container* (`Dockerfile.gateway`): gives metering and the
+   usage limits the plan relies on.
+2. *A provider key in `HEADLESS_MODEL_API_KEY`*, the runner's single-tenant
+   fallback: simplest. Spend is estimated, not metered (decision D8).
+3. *A local OpenAI-compatible model server*: keeps everything on the device, but
+   tool-calling quality varies by model and this has not been tried.
+
+**Wiring.** Den already reads `DEN_HEADLESS_RUNNER_URL` and
+`DEN_HEADLESS_RUNNER_TOKEN` for the Slack assistant's headless runtime; the
+orchestrator reuses them, with the token equal to the runner's
+`HEADLESS_API_TOKEN` (32 characters or more). The runner's `HEADLESS_MCP_URL`
+points at the local Den `/mcp/agent`; the runner permits plain HTTP on loopback.
+
+**Harden it before the pilot.** The evaluation stack is not production-safe by
+default: it enables public signup and uses development credentials.
+
+- Generate real values for `OPENWORK_AUTH_SECRET` and `OPENWORK_DB_ENCRYPTION_KEY`.
+- Set `OPENWORK_ALLOW_SIGNUP=false` and use the private first-administrator
+  flow (`OPENWORK_OWNER_EMAILS`, `OPENWORK_SETUP_CODE`).
+- Keep every port bound to loopback. For a second device, use an SSH tunnel or a
+  private network, as the evaluation guide describes.
+- Keep `.env` private (`umask 077`) and out of version control.
+
+**What a single device cannot give you.**
+
+| Limit | Consequence and handling |
+| --- | --- |
+| Availability equals the device | A sleeping laptop is an outage. Use an always-on machine, or disable sleep for the pilot. Expired leases and missed ticks recover as designed when it returns, but nothing runs while it is off |
+| One disk | Back up MySQL (see below) and the runner's SQLite file; losing the volume loses the queue and the ledger |
+| No public address | Webhook event sources cannot reach it. The sample's intake agent polls instead; a tunnel (for example Tailscale, which `den-dev-up.sh` already detects) can be added later |
+| Resource limits | The runner and Den share the machine. Keep pilot scale (about 10 agents, 5 concurrent attempts) and watch memory |
+| Service targets | The targets in section 3 describe the hosted and Kubernetes profiles; the local profile only promises recovery, not uptime |
 
 ### Topology
 
@@ -177,12 +233,13 @@ Names are proposals, modelled on `DEN_AUTOMATIONS_*` in `ee/apps/den-api/src/env
 | `DEN_ORCHESTRATOR_LEASE_MS` | `60000` | Attempt lease |
 | `DEN_ORCHESTRATOR_HEARTBEAT_MS` | `20000` | Heartbeat period |
 | `DEN_ORCHESTRATOR_DRAIN_TIMEOUT_MS` | `30000` | Graceful shutdown window |
-| `DEN_ORCHESTRATOR_HEADLESS_RUNNER_URL` | none | Runner base URL (https, or http on loopback, as the runner requires) |
-| `DEN_ORCHESTRATOR_HEADLESS_RUNNER_TOKEN` | none | Service token (32 characters or more), from a secret |
 | `DEN_ORCHESTRATOR_LEDGER_ANCHOR_URL` | none | Optional write-once store for daily anchors |
 
-Add matching values under the existing chart, and a `headlessRunner` section if
-the chart does not already deploy it.
+The runner address and token are not new variables: the orchestrator reuses
+`DEN_HEADLESS_RUNNER_URL` and `DEN_HEADLESS_RUNNER_TOKEN`, the ones Den already
+uses for the Slack assistant's headless runtime. Add matching values under the
+existing chart, and a `headlessRunner` section if the chart does not already
+deploy it.
 
 ### Database
 
@@ -209,8 +266,10 @@ the runner, resume.
 
 ### Backup and restore
 
-Use the managed database's point-in-time recovery. A restore needs care, because
-the database may be older than the world:
+Use the managed database's point-in-time recovery. On the local profile, take a
+nightly `mysqldump` of the Den database and copy it, and the runner's SQLite
+file, off the device. A restore needs care, because the database may be older
+than the world:
 
 1. Engage the kill switch before restoring.
 2. Restore, then verify the ledger chain.

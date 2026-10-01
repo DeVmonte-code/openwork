@@ -105,6 +105,10 @@ specs.
   entry, control registrations, `en` strings.
 - Rollups, metrics, logs, traces, the alert rules, the Den dashboard monitor and
   a Grafana dashboard under `infra/`.
+- The local pilot stack: a headless-runner image (`packaging/docker/Dockerfile.headless-runner`)
+  and a Compose overlay that brings up Den, MySQL, Den web and the runner together
+  in the style of `den-dev-up.sh`, the small mock MCP servers the sample needs,
+  and a short local setup and backup guide.
 
 **Exit:** O1 to O5 pass; J1 green; the screenshot set in [ui.md](ui.md) attached
 to the pull requests; `.warden/skills/design-spec-review` run locally.
@@ -123,7 +127,8 @@ See below.
 
 ## Controlled pilot
 
-**Where.** An internal organization only, with a small group of agents and a
+**Where.** One local device the team controls, using the local single-device
+profile. An internal organization only, with a small group of agents and a
 low-risk process.
 
 **What.** The six sample agents, in four stages. Move to the next only when its
@@ -169,6 +174,7 @@ incidents handled, not just volume.
 | Spend through bring-your-own-key models is not metered | Estimated and labelled; organization caps; drift alert AL13 |
 | Approval fatigue | Rate limit, exact-argument cards, no bulk approve, ageing escalation, review of approval times in the pilot |
 | Confusion with Automations | See below; position the two clearly in copy and docs |
+| The pilot device sleeps, restarts or loses its disk | Always-on machine; sleep disabled; nightly database and runner backups off the device; recovery after downtime is tested in M7 (RB9, R1, R3) |
 | The headless runner has no high availability (one process, local SQLite) | Checkpoints live in Den; several runners; cloud runner after the pilot |
 | People want local-file agents | Explicitly deferred; the desktop runner's pull model is the starting point |
 | Presence across replicas is not proven (noted as deferred hardening for the desktop runner) | The orchestrator keeps presence in the database and nothing in process memory |
@@ -191,7 +197,7 @@ default that turns out wrong changes the named document.
 
 | # | Question | Working default | What we need |
 | --- | --- | --- | --- |
-| 1 | Deployment environment | Hosted, self-hosted Kubernetes (EKS, AKS or GKE using the existing Helm chart) and hybrid runners | Which profile the pilot uses first, and whether Azure is it |
+| 1 | Deployment environment | **Decided: the pilot runs self-hosted on one local device the team controls** ([operations.md](operations.md), "Local single-device profile"). Kubernetes (EKS, AKS, GKE) and hybrid runners stay supported for later | Which machine, and that it stays on |
 | 2 | Implementation stack | The existing one: TypeScript, Hono, Drizzle on MySQL, React, TanStack Query, Zod; MySQL as the queue | Confirmation that no separate broker is wanted |
 | 3 | Initial agents and process | The six in [sample-process.md](sample-process.md) | The first real, low-risk internal process |
 | 4 | Availability and recovery targets | [operations.md](operations.md) section 3 | Required uptime, RPO and RTO |

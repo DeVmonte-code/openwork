@@ -113,6 +113,7 @@ All are proposals until a maintainer confirms. "Needs" names who should confirm.
 | D10 | The tab is called "Orchestrator" while behind the rollout flag. Design reviews the name before general availability. | `DESIGN.md` C3 asks for names people control, and "Agents" already means local OpenCode agents in the Library | Design owner |
 | D11 | Writing orchestrator configuration is an Enterprise feature. Pause, stop, retire and reading are never gated. | `docs/enterprise-plan-gating.md` | Product owner |
 | D12 | The orchestrator is scoped to one organization. | Same as Automations | Architecture owner |
+| D13 | The pilot runs self-hosted on one local device the team controls, using Docker Compose, Den's stub provisioner and the headless runner. Kubernetes and hybrid stay supported later. | Full control, nothing outside the machine required, same code paths as production. Taken from the project owner's answer on 2026-10-01 ("the one we can have full access, and once deployed on a local device does not give any issues") | Project owner to confirm this reading |
 
 ## Traceability to the brief
 
@@ -140,4 +141,5 @@ Continuous operation that depends on an open chat session.
 
 The brief lists seven unknowns. Each has a working default in this plan so
 nothing blocks; [delivery-plan.md](delivery-plan.md) records the default and
-what we need from you for every one.
+what we need from you for every one. The deployment environment is decided
+(D13: one local device); the first real process to pilot is still open.
