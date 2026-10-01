@@ -18,6 +18,7 @@ import {
   Columns2,
   FolderPlus,
   LayoutGrid,
+  Network,
   MoreHorizontal,
   Pencil,
   Pin,
@@ -781,6 +782,9 @@ export type AppSidebarProps = {
   automationsActive?: boolean;
   automationsNeedAttention?: boolean;
   onOpenAutomations?: () => void;
+  orchestratorActive?: boolean;
+  orchestratorNeedAttention?: boolean;
+  onOpenOrchestrator?: () => void;
   dashboardActive?: boolean;
   onOpenDashboard?: () => void;
   /** Opens the cross-session message search dialog (Cmd/Ctrl+Shift+F). */
@@ -983,6 +987,26 @@ export function AppSidebar(props: AppSidebarProps) {
                   </span>
                 )}
                 onSelect={props.onOpenAutomations}
+              />
+            ) : null}
+            {props.onOpenOrchestrator ? (
+              <SidebarDestination
+                active={props.orchestratorActive === true}
+                icon={Network}
+                label={t("orchestrator.title")}
+                labelContent={(
+                  <span className="flex min-w-0 flex-1 items-center gap-2">
+                    <span className="truncate">{t("orchestrator.title")}</span>
+                    {props.orchestratorNeedAttention ? (
+                      <AlertTriangle
+                        data-orchestrator-attention-indicator
+                        className="ml-auto size-3.5 shrink-0 text-warning"
+                        aria-label={t("orchestrator.approval_waiting_label")}
+                      />
+                    ) : null}
+                  </span>
+                )}
+                onSelect={props.onOpenOrchestrator}
               />
             ) : null}
             <SidebarDestination

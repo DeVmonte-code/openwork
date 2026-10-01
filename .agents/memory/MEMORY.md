@@ -1,1 +1,2 @@
 - [Import target selection](import-target-selection.md) — imports can contain several separate Vercel apps; confirm the user's target before migrating one.
+- [Isolated browser previews](isolated-browser-previews.md) — Vite test harnesses must share the app's exact versioned dependency URLs to preserve React Router context.

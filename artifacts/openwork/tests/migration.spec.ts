@@ -148,6 +148,16 @@ for (const path of ["/session", "/settings"]) {
   });
 }
 
+test("opening /orchestrator while signed out redirects to sign-in", async ({ page }) => {
+  observeBrowserDiagnostics(page);
+  await page.goto("/orchestrator");
+  await expect(page).toHaveURL(/\/signin$/);
+  await expect(
+    page.getByRole("heading", { name: "Welcome to OpenWork" }),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "Sign in to OpenWork" })).toBeVisible();
+});
+
 test("mobile viewport renders the sign-in screen in dark theme", async ({
   page,
 }, testInfo) => {

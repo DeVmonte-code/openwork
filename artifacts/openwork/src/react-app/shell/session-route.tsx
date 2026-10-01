@@ -123,6 +123,9 @@ import { DashboardPage } from "@/react-app/domains/dashboard/dashboard-page";
 import { useDashboardDeploymentAvailability } from "@/react-app/domains/dashboard/dashboard-availability";
 import { useAutomationDeploymentEnabled } from "@/react-app/domains/automations/automation-availability";
 import { automationsStateChangedEvent } from "@/react-app/domains/automations/automation-events";
+import { OrchestratorPage } from "@/react-app/domains/orchestrator/orchestrator-page";
+import { ORCHESTRATOR_PREVIEW_ENABLED } from "@/react-app/domains/orchestrator/orchestrator-availability";
+import { useOrchestratorPreview } from "@/react-app/domains/orchestrator/orchestrator-preview";
 import type {
   NewTaskComposerContext,
   NewTaskComposerHandoff,
@@ -410,6 +413,7 @@ export function SessionRoute() {
   const location = useLocation();
   const appsRouteActive = /^(?:\/apps|\/dashboard\/apps)(?:\/|$)/.test(location.pathname);
   const automationsRouteRequested = /^\/automations(?:\/|$)/.test(location.pathname);
+  const orchestratorRouteRequested = location.pathname === "/orchestrator";
   const dashboardRouteRequested = /^\/dashboard(?:\/|$)/.test(location.pathname);
   const activityRouteRequested = location.pathname === "/activity";
   const {
@@ -430,6 +434,8 @@ export function SessionRoute() {
   // the placement of what each creates. Den's deployment flag stays the gate.
   const automationsEnabled = automationDeploymentEnabled;
   const automationsRouteActive = automationsEnabled && automationsRouteRequested;
+  const orchestratorRouteActive = ORCHESTRATOR_PREVIEW_ENABLED && orchestratorRouteRequested;
+  const orchestratorPreview = useOrchestratorPreview();
   const denSettings = readDenSettings();
   const sessionDraftScope = resolveSessionDraftScope({
     hasCloudCredential: Boolean(denSettings.authToken?.trim()),
@@ -446,6 +452,10 @@ export function SessionRoute() {
     if (!automationsRouteRequested || automationsEnabled) return;
     navigate("/", { replace: true });
   }, [automationsEnabled, automationsRouteRequested, navigate]);
+  useEffect(() => {
+    if (!orchestratorRouteRequested || ORCHESTRATOR_PREVIEW_ENABLED) return;
+    navigate("/", { replace: true });
+  }, [navigate, orchestratorRouteRequested]);
   useEffect(() => {
     if (!dashboardRouteRequested || dashboardAvailabilityLoading || mcpAppsDashboardEnabled) return;
     navigate("/", { replace: true });
@@ -556,7 +566,7 @@ export function SessionRoute() {
   } = useWorkspaceRouteState({
     preservePendingConversationRoute: Boolean(requestedPendingId && pendingConversations[requestedPendingId]?.scope === sessionDraftScope),
     developerMode,
-    workspaceRoute: activityRouteActive ? "activity" : appsRouteActive ? "apps" : automationsRouteActive ? "automations" : dashboardWorkspaceRoute ? "dashboard" : "session",
+    workspaceRoute: activityRouteActive ? "activity" : appsRouteActive ? "apps" : automationsRouteActive ? "automations" : orchestratorRouteActive ? "orchestrator" : dashboardWorkspaceRoute ? "dashboard" : "session",
     onServerSettingsChanged: () => setOpenworkServerSettingsVersion((value) => value + 1),
     onHostInfo: setOpenworkServerHostInfoState,
   });
@@ -3854,9 +3864,10 @@ export function SessionRoute() {
           }}
         />
       }
-      primaryTitle={activityRouteActive ? t("activity.title") : appsRouteActive ? "Dashboard" : automationsRouteActive ? "Automations" : dashboardRouteActive ? "Dashboard" : undefined}
-      primarySurface={activityRouteActive ? "flat" : undefined}
-      primarySlot={activityRouteActive ? <ActivityPage onTrySkill={trySkillInNewSession} /> : pendingConversation ? <PendingConversationView conversation={pendingConversation} composer={newTaskComposerContext} /> : appsRouteActive ? (
+      primaryTitle={activityRouteActive ? t("activity.title") : orchestratorRouteActive ? t("orchestrator.title") : appsRouteActive ? "Dashboard" : automationsRouteActive ? "Automations" : dashboardRouteActive ? "Dashboard" : undefined}
+      primaryTitleInPage={orchestratorRouteActive}
+      primarySurface={activityRouteActive || orchestratorRouteActive ? "flat" : undefined}
+      primarySlot={activityRouteActive ? <ActivityPage onTrySkill={trySkillInNewSession} /> : orchestratorRouteActive ? <OrchestratorPage /> : pendingConversation ? <PendingConversationView conversation={pendingConversation} composer={newTaskComposerContext} /> : appsRouteActive ? (
         <WorkspaceProvider
           client={opencodeClient}
           opencodeBaseUrl={opencodeBaseUrl}
@@ -3904,6 +3915,13 @@ export function SessionRoute() {
               navigate(automationsRoute());
             }
           : undefined,
+        orchestratorActive: orchestratorRouteActive,
+        orchestratorNeedAttention: orchestratorPreview.approvalWaiting,
+        onOpenOrchestrator: ORCHESTRATOR_PREVIEW_ENABLED
+          ? () => {
+              navigate("/orchestrator");
+            }
+          : undefined,
         dashboardActive: dashboardRouteActive || appsRouteActive,
         onOpenDashboard: mcpAppsDashboardEnabled
           ? () => {
@@ -3914,6 +3932,7 @@ export function SessionRoute() {
           if (workspaceId === selectedWorkspaceId) return true;
           setLegacySelectedWorkspaceId(workspaceId);
           writeActiveWorkspaceId(workspaceId || null);
+          if (orchestratorRouteActive) return true;
           // Route adoption owns desktop persistence and server activation.
           // Centralizing those effects lets rapid navigation coalesce to the
           // last route instead of racing stale IPC and engine reloads.
@@ -4171,6 +4190,7 @@ export function SessionRoute() {
       onOpenExtensions={(section) => handleOpenExtensions(section)}
       onToggleSidebar={toggleSidebar}
       onOpenAutomations={() => navigate(automationsRoute())}
+      onOpenOrchestrator={ORCHESTRATOR_PREVIEW_ENABLED ? () => navigate("/orchestrator") : undefined}
       onOpenDashboard={() => navigate(dashboardRoute())}
       onCreateWorkspace={handleOpenCreateWorkspace}
       modelOptions={paletteModelCatalog ? [...paletteModelCatalog] : paletteTargetSessionId === selectedSessionId ? modelPicker.actionOptions : []}

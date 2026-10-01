@@ -188,6 +188,9 @@ export type SessionPageSidebarProps = {
   automationsActive?: boolean;
   automationsNeedAttention?: boolean;
   onOpenAutomations?: () => void;
+  orchestratorActive?: boolean;
+  orchestratorNeedAttention?: boolean;
+  onOpenOrchestrator?: () => void;
   dashboardActive?: boolean;
   onOpenDashboard?: () => void;
   /** Opens the cross-session message search dialog (Cmd/Ctrl+Shift+F). */
@@ -298,6 +301,7 @@ export type SessionPageProps = {
   /** Standalone pages use the main canvas instead of the inset conversation pane. */
   primarySurface?: "flat";
   primaryTitle?: string;
+  primaryTitleInPage?: boolean;
   terminalOpen?: boolean;
   onTerminalOpenChange?: (open: boolean) => void;
   onSessionTabsChange?: (tabs: OpenSessionTab[]) => void;
@@ -1433,6 +1437,9 @@ export function SessionPage(props: SessionPageProps) {
           automationsActive={props.sidebar.automationsActive}
           automationsNeedAttention={props.sidebar.automationsNeedAttention}
           onOpenAutomations={props.sidebar.onOpenAutomations}
+          orchestratorActive={props.sidebar.orchestratorActive}
+          orchestratorNeedAttention={props.sidebar.orchestratorNeedAttention}
+          onOpenOrchestrator={props.sidebar.onOpenOrchestrator}
           dashboardActive={props.sidebar.dashboardActive}
           onOpenDashboard={props.sidebar.onOpenDashboard}
           conversationHistory={{
@@ -1504,15 +1511,17 @@ export function SessionPage(props: SessionPageProps) {
                   <TooltipContent>Back to parent chat</TooltipContent>
                 </Tooltip>
               ) : null}
-              <h1 data-session-header-title className={cn("truncate font-medium text-dls-text", !isElectronRuntime() && !props.primaryTitle && !props.mainContentTitle && "max-lg:hidden", props.mainContentHeaderActionsRef ? "text-base leading-6" : "text-[13px]")}>
-                {props.primaryTitle
-                  ? props.primaryTitle
-                  : props.mainContentTitle
-                  ? props.mainContentTitle
-                  : showWorkspaceSetupEmptyState
-                  ? t("session.create_or_connect_workspace")
-                  : selectedSessionTitle || t("session.default_title")}
-              </h1>
+              {!props.primaryTitleInPage ? (
+                <h1 data-session-header-title className={cn("truncate font-medium text-dls-text", !isElectronRuntime() && !props.primaryTitle && !props.mainContentTitle && "max-lg:hidden", props.mainContentHeaderActionsRef ? "text-base leading-6" : "text-[13px]")}>
+                  {props.primaryTitle
+                    ? props.primaryTitle
+                    : props.mainContentTitle
+                    ? props.mainContentTitle
+                    : showWorkspaceSetupEmptyState
+                    ? t("session.create_or_connect_workspace")
+                    : selectedSessionTitle || t("session.default_title")}
+                </h1>
+              ) : null}
               {!props.primaryTitle && !props.mainContentTitle && !showWorkspaceSetupEmptyState ? (
                 // Pinned and archived sessions are listed across workspaces, so
                 // the header names the workspace the open session belongs to.

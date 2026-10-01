@@ -113,6 +113,7 @@ export type CommandPaletteProps = {
   onOpenExtensions: (section?: string) => void;
   onToggleSidebar?: () => void;
   onOpenAutomations?: () => void;
+  onOpenOrchestrator?: () => void;
   onOpenDashboard?: () => void;
   onCreateWorkspace?: () => void;
   /** Optional: open the full default-model picker. */
@@ -399,6 +400,18 @@ export function CommandPalette(props: CommandPaletteProps) {
           action: () => {
             props.onClose();
             props.onOpenAutomations?.();
+          },
+        }]
+      : []),
+    ...(props.onOpenOrchestrator
+      ? [{
+          id: "orchestrator.open",
+          title: t("orchestrator.title"),
+          keywords: ["orchestrator", "approvals", "workflow", "run"],
+          group: ACTIONS_GROUP,
+          action: () => {
+            props.onClose();
+            props.onOpenOrchestrator?.();
           },
         }]
       : []),
