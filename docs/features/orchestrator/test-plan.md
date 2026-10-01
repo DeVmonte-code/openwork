@@ -2,7 +2,7 @@
 
 Status: proposal. Part of [the orchestrator plan](README.md). Covers brief step 11.
 
-The ids below (L, C, R, O, A, P, X, G, H, J) are the ones the other documents cite.
+The ids below (L, C, R, O, A, P, X, G, H, W, J) are the ones the other documents cite.
 Alerts are `AL1` to `AL13` and runbooks `RB1` to `RB10`, both in
 [operations.md](operations.md), so the three sets never share a name. A
 test is "done" when it is automated and, for anything a person could be asked to
@@ -173,6 +173,23 @@ Service-layer additions (M3 onward):
 - A manager agent attempts to approve an external send; the approval stays pending (D19).
 - Every write has exactly one `hierarchy.*` ledger entry with before and after values.
 
+## W: workspaces and chats
+
+Design in [workspaces-and-chat.md](workspaces-and-chat.md). W1 and W2 are pure and run in the
+domain layer; the rest run in the service layer and the journey.
+
+| Id | Scenario | Expected |
+| --- | --- | --- |
+| W1 | The origin schema | Every origin kind parses; a chat origin that carries content, or lacks either id, is rejected |
+| W2 | Taint by origin | A chat, an MCP client, an event source and an outside caller start tainted; the Orchestrator itself and a schedule do not |
+| W3 | Submit from a chat | One root task with the origin; the same call retried creates no second task |
+| W4 | Identity | The member comes from the token and not from arguments; another member's task is a 404 |
+| W5 | What a chat cannot do | Approve, decline, answer and configure have no capability; each returns `unknown_capability` |
+| W6 | The scope | Without the `orchestrator` scope, or with the feature off, the capabilities are not listed by `search_capabilities` |
+| W7 | Discuss in chat | The composer opens with the draft unsent; a member without `orchestrator.view_content` gets title and state only |
+| W8 | Back to chat | The link is hidden when the workspace is not on this device or the signed-in member differs |
+| W9 | No loop | The Orchestrator never sends a prompt into a chat; submissions beyond the per-member limit are refused with `rate_limited` |
+
 ## Journey specs
 
 Written in the shape `write-a-spec` asks for: a persona in the title, steps that
@@ -233,6 +250,18 @@ only, and bounded waits.
 9. after: Exceptions carries a count of 1 naming it, and choosing a manager clears it
 10. negative: a member without the right sees the tree and the reports, and the controls show a lock with who can change them
 
+### J7 A chat hands work to an agent and the person finishes it in the tab
+
+1. given a signed-in member with a chat open in a workspace, and the sample agents running
+2. when the chat's agent is asked to have the Research agent look at a request
+3. then the chat shows a card with the task and its state, and the Orchestrator lists the task as "Started from a chat" (witness: the task is tainted)
+4. after: the process reaches "Waiting for approval", and the sidebar marker shows in a different workspace too
+5. when the member opens the card and approves in the Orchestrator
+6. after: the reply is sent once, and the card in the chat shows the task finished
+7. negative: asking the chat's agent to approve instead finds no such capability, and the approval stays pending
+8. when the member chooses **Discuss in chat** on the task
+9. then the composer opens with a summary and a link, and nothing is sent until they send it
+
 ## Load and soak
 
 - **Load.** 100 agents, 50 concurrent attempts, 100,000 tasks a day for 24
@@ -257,6 +286,6 @@ only, and bounded waits.
 
 ## Exit criteria for this plan's testing
 
-All of L, C, R, A, P, X, G and H automated and green; J1 to J6 green and published as
+All of L, C, R, A, P, X, G, H and W automated and green; J1 to J7 green and published as
 PR evidence; O3 and O4 green; the load test run once with its results recorded.
 Nothing proceeds to the pilot with a red or skipped item in this list.

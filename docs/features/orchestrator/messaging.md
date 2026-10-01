@@ -86,6 +86,34 @@ export const addressSchema = z.discriminatedUnion("kind", [
   z.strictObject({ kind: z.literal("thread") }),
 ])
 
+/**
+ * Where a root task came from. Identifiers only: a chat's content is never copied into the
+ * orchestrator, so the link can say "started from this chat" without holding what was said.
+ */
+export const originSchema = z.discriminatedUnion("kind", [
+  z.strictObject({ kind: z.literal("member_ui") }),
+  z.strictObject({
+    kind: z.literal("chat"),
+    surface: z.enum(["desktop", "web"]),
+    workspaceId: z.string().min(1).max(200),
+    sessionId: z.string().min(1).max(200),
+  }),
+  z.strictObject({ kind: z.literal("mcp_client"), client: z.string().min(1).max(80) }),
+  z.strictObject({ kind: z.literal("event_source"), sourceId: z.string().min(1).max(160) }),
+  z.strictObject({ kind: z.literal("schedule") }),
+  z.strictObject({ kind: z.literal("a2a_caller"), callerId: z.string().min(1).max(160) }),
+])
+export type Origin = z.infer<typeof originSchema>
+
+/**
+ * Text that did not come from a person typing into the Orchestrator is untrusted input: a chat
+ * may have read a web page, and an outside caller is outside. Such a task starts tainted, so
+ * it cannot reach an external write without a person's approval (governance.md, "Taint").
+ */
+export function originTaintsTask(origin: Origin): boolean {
+  return origin.kind !== "member_ui" && origin.kind !== "schedule"
+}
+
 // --- message bodies, one per type --------------------------------------------
 
 const delegateBody = z.strictObject({
@@ -401,10 +429,13 @@ attempt's run token). An agent gets only the tools listed in
 | `inspect_queue` | none | Read-only counts and task summaries for monitor agents, scoped by the agent's data classes |
 | `notify` | none | In-app notification. Rate-limited per agent; recipients are limited to the agent's owner and the roles and members named in its own escalation rules |
 
-For people and other tools, `orchestrator_submit_task` and `orchestrator_get_task`
-are exposed through the organization's MCP gateway so Codex, Claude Code and
-other MCP clients can hand work to the orchestrator. They run with the caller's
-identity, which is recorded on the task and in the ledger. See [api.md](api.md).
+For people and other tools, the capabilities `orchestrator:list_agents`,
+`orchestrator:submit_task` and `orchestrator:get_task` are exposed through the
+organization's MCP gateway so the chat in any workspace, Codex, Claude Code and other MCP
+clients can hand work to the orchestrator. They run with the caller's identity, which is
+recorded on the task and in the ledger. Each root task also records an `origin` (see
+`originSchema` below). See [api.md](api.md) and
+[workspaces-and-chat.md](workspaces-and-chat.md).
 
 ## A short exchange
 

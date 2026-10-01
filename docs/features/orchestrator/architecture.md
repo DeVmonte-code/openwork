@@ -247,6 +247,7 @@ with the database.
 | `classification` | A data class; only agents cleared for it may claim the task |
 | `budget_micro_usd`, `spent_micro_usd` | Per-task allocation and spend |
 | `result`, `error`, `created_by` | `created_by` is an actor: agent, member or system |
+| `origin` | Root tasks only: where the task came from (the Orchestrator, a chat, an MCP client, an event source, a schedule, an outside caller). Ids, never content. It sets the starting `taint`. See [workspaces-and-chat.md](workspaces-and-chat.md) |
 
 Indexes: a claimable index on `(organization_id, target_agent_id, state, not_before)`;
 a unique index on `(organization_id, idempotency_key)`; `(root_task_id)`;

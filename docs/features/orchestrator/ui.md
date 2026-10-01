@@ -241,6 +241,21 @@ ledger and can be reversed. Without `orchestrator.activate` the controls show a 
 who can change it (P4, C5). Agents cannot change the hierarchy from the interface either:
 there is no agent-readable command for it.
 
+### Linking to chats and workspaces
+
+Details in [workspaces-and-chat.md](workspaces-and-chat.md). On the interface:
+
+- **Discuss in chat** is on the task page, on a "Needs you" row menu and on the agent page. It
+  opens the new-task composer, with the workspace chosen in the existing destination menu and
+  a draft that holds a short summary and a link. Nothing is sent and nothing navigates unasked
+  (S5). The summary uses only what the member may view.
+- A task that came from a chat reads "Started from a chat". **Open chat** appears beside it only
+  when that workspace is on this device and the signed-in member started it. Elsewhere there is
+  no link, never a broken one.
+- Inside a chat, an Orchestrator task shows as a card with its state and **Open in
+  Orchestrator**. The consent card is never in the chat: approving stays in the tab.
+- No new sidebar row. The attention marker is organization-wide and shows in every workspace.
+
 ### Activity
 
 The ledger in plain sentences with the actor and time: "Ana activated Sender

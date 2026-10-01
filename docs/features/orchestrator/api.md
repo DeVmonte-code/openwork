@@ -91,8 +91,8 @@ parses.
 
 | Method and path | Purpose | Permission |
 | --- | --- | --- |
-| `GET /v1/orchestrator-tasks` | Filter by `state`, `agentId`, `rootTaskId`, `type`, `createdAfter`; `state=dead_lettered` is the dead-letter view | `view` |
-| `POST /v1/orchestrator-tasks` | Submit a root task | `submit` |
+| `GET /v1/orchestrator-tasks` | Filter by `state`, `agentId`, `rootTaskId`, `type`, `createdAfter`, `originSessionId`; `state=dead_lettered` is the dead-letter view | `view` |
+| `POST /v1/orchestrator-tasks` | Submit a root task. Optional `origin` (an `originSchema` label). The server sets the kind from the route, so a caller on the gateway cannot claim `member_ui` | `submit` |
 | `GET /v1/orchestrator-tasks/{taskId}` | Task with its process summary | `view` |
 | `GET /v1/orchestrator-tasks/{taskId}/messages` | Thread, in `seq` order | `view_content` for bodies |
 | `GET /v1/orchestrator-tasks/{taskId}/attempts` | Attempts with version, runner, usage, error | `view` |
@@ -275,16 +275,24 @@ gets `409 attempt_superseded`.
 **Run-scoped tools** (authorized by an attempt's run token) are listed in
 [messaging.md](messaging.md).
 
-**Organization tools** on `/mcp/agent`, so Codex, Claude Code and other clients
-can hand work to the orchestrator. They run as the caller:
+**Organization capabilities** on `/mcp/agent`, so the chat in any workspace, Codex, Claude Code and
+other clients can hand work to the orchestrator. They follow the remote-session pattern
+(`ee/apps/den-api/src/mcp/remote-session-capabilities.ts`): a capability source behind an
+`orchestrator` scope, found with `search_capabilities` and run with `execute_capability`, not
+new top-level tools. They run as the caller, and the caller is recorded on the task and in the
+ledger.
 
-| Tool | Does |
-| --- | --- |
-| `orchestrator_submit_task` | Same as `POST /v1/orchestrator-tasks` |
-| `orchestrator_get_task` | Task state, result and timeline summary |
+| Capability | Does | Permission |
+| --- | --- | --- |
+| `orchestrator:list_agents` | Running agents, the requests each handles, state | `view` |
+| `orchestrator:submit_task` | Same as `POST /v1/orchestrator-tasks`, with `idempotencyKey` and an optional `origin` label | `submit` |
+| `orchestrator:get_task` | Task state, result and timeline summary | `view`, or the caller's own submissions |
 
-The MCP catalogue is derived from the OpenAPI document (`docs/api-style.md`), so
-the summaries and descriptions written for these routes are text agents read.
+The `Orchestrator` API tag is deliberately **not** added to the MCP allow list in
+`ee/apps/den-api/src/mcp/policy.ts`. The catalogue is generated from the OpenAPI document and
+filtered by tag, so exposing the tag would expose approvals, configuration, the hierarchy and
+the kill switch. Approving, declining, answering and editing have no capability; a call for
+them returns `unknown_capability`. See [workspaces-and-chat.md](workspaces-and-chat.md).
 
 ## Errors
 

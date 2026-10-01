@@ -74,6 +74,7 @@ share infrastructure and neither replaces the other; see
 | [messaging.md](messaging.md) | 6 | Agent-to-agent message contract and history |
 | [a2a.md](a2a.md) | 3, 6 | The A2A protocol: Agent Cards, task states, delegation as A2A messages, remote agents, interoperability |
 | [hierarchy.md](hierarchy.md) | Span-of-control task | Who reports to whom: one manager per agent, control and dependency degrees, span of control, the five reports |
+| [workspaces-and-chat.md](workspaces-and-chat.md) | 10 | How the Orchestrator links to workspaces and the current chat: handing work from a chat, discussing a task in a chat, and agents bound to a workspace |
 | [memory.md](memory.md) | 7 | Task context versus durable memory, retention, access |
 | [governance.md](governance.md) | 8 | Permission matrix, approvals, secrets, ledger, loop and spend controls, threat model |
 | [api.md](api.md) | 10 | HTTP, stream, runner and MCP surfaces |
@@ -136,6 +137,7 @@ stored data for loops or two managers, and it keeps its levels as plain numbers.
 | Reconciler | The loop that moves each agent's observed state toward the state an operator asked for |
 | Manager | An agent that supervises other agents (`role.kind: manager`, or any agent with direct reports). Has exactly one manager of its own, except the root |
 | Direct report | An agent with a recorded, active reporting relationship to one manager |
+| Origin | Where a root task came from: the Orchestrator itself, a chat, an MCP client, an event source, a schedule or an outside A2A caller. Ids only, never content. A label, not authority |
 | Span of control | The number of active direct reports a manager has. Counted, never stored. Indirect reports are not counted |
 | Control degree | 1 to 5: how much authority the manager has over the report |
 | Dependency degree | 1 to 5: how much the report relies on its manager. Stored separately from the control degree |
@@ -166,6 +168,9 @@ All are proposals until a maintainer confirms. "Needs" names who should confirm.
 | D18 | Every agent except the root has exactly one direct manager. There is no matrix reporting, and no loops. | A single line of authority keeps escalation, approval and accountability unambiguous | Product owner |
 | D19 | A manager agent can satisfy an internal approval but never an approval for an external write or an irreversible action. Those stay with a person at every control degree. | A manager agent is software; the human floor in governance.md must not have a path around it | Security owner |
 | D20 | Changing the hierarchy needs the right to activate a version, and every change is a ledger entry. Agents may recommend a change but never make one. The span limit is 7 and breaches are flagged, not blocked, until the organization chooses `block`. | The hierarchy decides who has authority, so it is governed like configuration. The limit of 7 is a starting point to confirm | Product owner |
+| D21 | The Orchestrator stays organization-scoped. A workspace or a chat is a reference: an origin on a task and an optional binding on an agent. It is never a parent. | Same placement as Automations; keeps one queue, one ledger and one set of limits | Product owner |
+| D22 | Chats reach the Orchestrator through gateway capabilities, in the remote-session pattern. A chat can list agents, submit a task and read it. It cannot approve, answer, configure or change the hierarchy. | Reuses what every workspace already has; keeps people's decisions with people | Security owner |
+| D23 | A task that came from a chat, an MCP client, an event or an outside caller starts tainted. An origin is a label and carries ids only. | A chat may have read hostile text; taint already limits what such a task can do | Security owner |
 
 ## Traceability to the brief
 
@@ -183,6 +188,7 @@ All are proposals until a maintainer confirms. "Needs" names who should confirm.
 | No uncontrolled loops or duplicates | governance.md "Loop and spend controls", architecture.md "Idempotency" | test-plan.md R5, R10, G1 to G4, spec J4 |
 | Sample multi-agent workflow | sample-process.md | spec J1, J2 |
 | Span of control and dependency reporting (the follow-on task) | hierarchy.md | test-plan.md H1 to H14, spec J6 |
+| Linking to workspaces and the current chat (the follow-on question) | workspaces-and-chat.md | test-plan.md W1 to W9, spec J7 |
 
 ## Out of scope
 

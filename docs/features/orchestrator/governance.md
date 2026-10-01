@@ -95,7 +95,9 @@ can raise a tier at will and can lower one only through a recorded
 
 A task is **tainted** when any task earlier in its process ran on an agent with
 `inputTrust: "untrusted"`, when it came from an external event, or when it consumed a
-message, card or artifact from a remote agent. Taint is
+message, card or artifact from a remote agent. A root task also starts tainted when its
+`origin` is a chat, an MCP client, an event source or an outside caller
+(`originTaintsTask`, [workspaces-and-chat.md](workspaces-and-chat.md)). Taint is
 inherited by every child and is never cleared. On a tainted task:
 
 - `external_write` effects always need approval, even if the config's
@@ -357,3 +359,4 @@ argument mapping and a success test, used to settle unknown effects), `costCaps`
 | T15 | Injection through another agent's output | A remote agent returns text that tells ours to ignore its rules | Output is data, taints the task, is schema-checked where a skill defines a result, and approvals still show the exact action |
 | T16 | Authority laundering through a manager agent | A hostile message convinces a manager agent to approve a send, or to stop its report's safety check | A manager agent never satisfies an approval for an external write or an irreversible action (D19); its powers act on decisions and work, never on configuration, tools or budgets; every manager action is a ledger entry naming both agents |
 | T17 | Rewiring the hierarchy to gain authority | An editor makes a compromised agent the manager of a sender, or removes a manager to avoid oversight | Hierarchy changes need `orchestrator.activate` and are ledgered with before and after values; agents can only recommend; cycle, second-manager and unknown-agent changes are refused; an agent with no manager appears in the exceptions report |
+| T18 | A chat used as a way around the interface | A hostile web page convinces a chat's agent to approve, answer or reconfigure through the gateway | Those capabilities do not exist on the gateway (D22); a task from a chat starts tainted; the origin is a label and never authorizes; submissions are rate-limited per member |
