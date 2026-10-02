@@ -173,6 +173,7 @@ All are proposals until a maintainer confirms. "Needs" names who should confirm.
 | D22 | Chats reach the Orchestrator through gateway capabilities, in the remote-session pattern. A chat can list the agents visible to members, submit a task, read it, and relay the person's answer to a question put to them. It cannot approve, configure or change the hierarchy. | Reuses what every workspace already has; approvals and configuration stay a person's act in the tab. Decided by the project owner for answers | Security owner |
 | D23 | A task that came from a chat, an MCP client, an event or an outside caller starts tainted. An origin is a label and carries ids only. | A chat may have read hostile text; taint already limits what such a task can do | Security owner |
 | D24 | An agent is visible to members' chats and MCP clients only when its `a2a.exposure` is `members` or `organization`. `members` is not served over A2A; `organization` is. Decided by the project owner. | Members see only the agents meant for them; widening A2A stays a separate security decision | Product owner |
+| D25 | Talking to an agent happens in a conversation inside the Orchestrator, made of ordinary `chat.message` tasks in one A2A context and shown in plain language. A general chat is the second-best path. Approvals stay cards; typing "approve" approves nothing. Decided after the owner tried the preview and found a general chat confusing. | The guarantees on tasks, approvals and loops apply with no new machinery, and people never see tool or model rows | Product owner |
 
 ## Traceability to the brief
 
@@ -191,6 +192,7 @@ All are proposals until a maintainer confirms. "Needs" names who should confirm.
 | Sample multi-agent workflow | sample-process.md | spec J1, J2 |
 | Span of control and dependency reporting (the follow-on task) | hierarchy.md | test-plan.md H1 to H14, spec J6 |
 | Linking to workspaces and the current chat (the follow-on question) | workspaces-and-chat.md | test-plan.md W1 to W14, spec J7 |
+| A friendly way to talk to an agent (the follow-on question) | ui.md "Asking an agent", messaging.md "Conversations with a person" | test-plan.md T1 to T8, spec J8 |
 
 ## Out of scope
 

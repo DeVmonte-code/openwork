@@ -127,6 +127,7 @@ green as specs.
   entry, control registrations, `en` strings.
 - The agent builder described in [ui.md](ui.md) (Configure and Preview, requests it
   handles, example requests) and `SubscribeToTask` over server-sent events.
+- The conversation panel ("Ask <agent>") and `chat.message` handling ([ui.md](ui.md), [messaging.md](messaging.md)); the builder's "Can be asked questions" switch.
 - The `orchestrator:*` capability source (list agents, submit, read, relay an answer) and its card ([workspaces-and-chat.md](workspaces-and-chat.md)), behind the `orchestrator` scope, in the remote-session pattern; **Discuss in chat** and **Open chat** in the interface.
 - The Hierarchy page ([ui.md](ui.md)): tree, both-direction panel, the four report views,
   the Change manager dialog with live validation, and the `hierarchy` stream event.
@@ -137,7 +138,7 @@ green as specs.
   in the style of `den-dev-up.sh`, the small mock MCP servers the sample needs,
   and a short local setup and backup guide.
 
-**Exit:** O1 to O5, W3 to W14 pass; J1, J6 and J7 green; the screenshot set in [ui.md](ui.md) attached
+**Exit:** O1 to O5, W3 to W14, T1 to T8 pass; J1, J6, J7 and J8 green; the screenshot set in [ui.md](ui.md) attached
 to the pull requests; `.warden/skills/design-spec-review` run locally.
 
 ### M7 Resilience, security, scale

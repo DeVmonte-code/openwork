@@ -2,7 +2,7 @@
 
 Status: proposal. Part of [the orchestrator plan](README.md). Covers brief step 11.
 
-The ids below (L, C, R, O, A, P, X, G, H, W, J) are the ones the other documents cite.
+The ids below (L, C, R, O, A, P, X, G, H, W, T, J) are the ones the other documents cite.
 Alerts are `AL1` to `AL13` and runbooks `RB1` to `RB10`, both in
 [operations.md](operations.md), so the three sets never share a name. A
 test is "done" when it is automated and, for anything a person could be asked to
@@ -196,6 +196,21 @@ domain layer; the rest run in the service layer and the journey.
 | W13 | The policy | With `chatAnswers` off, `orchestrator:answer` is not listed and a call returns `unknown_capability` |
 | W14 | Visibility | `orchestrator:list_agents` shows only `members` and `organization` agents; submitting to an `internal` agent returns `not_found`; the tab still reaches every agent |
 
+## T: talking to an agent
+
+Design in [ui.md](ui.md), "Asking an agent", and [messaging.md](messaging.md), "Conversations with a person".
+
+| Id | Scenario | Expected |
+| --- | --- | --- |
+| T1 | A message becomes one task | Sending text creates one `chat.message` task for the agent in the conversation's context; sending it twice with the same key creates one |
+| T2 | Several turns | A second message uses the same `contextId`, and the agent sees the earlier turns within its budget |
+| T3 | Plain language | The thread shows no tool names, model names, ids or "thought" rows; Details shows them |
+| T4 | Approvals | An approval shows as the consent card in the thread; typing "approve" or "yes, send it" approves nothing and the agent says so |
+| T5 | An agent that cannot be asked | An agent without `chat.message` shows no panel and a reason |
+| T6 | Limits | A message over 4,000 characters, or past the per-member rate, is refused with a reason and nothing is created |
+| T7 | Questions as buttons | A `task.clarify.request` with options appears as buttons; choosing one sends the answer; free text is refused if the question offers options |
+| T8 | Honest labels in the preview | The panel says the replies are a sample and that no agent was contacted; closing it discards the conversation; no storage or network writes |
+
 ## Journey specs
 
 Written in the shape `write-a-spec` asks for: a persona in the title, steps that
@@ -270,6 +285,17 @@ only, and bounded waits.
 10. when the member chooses **Discuss in chat** on the task
 11. then the composer opens with a summary and a link, and nothing is sent until they send it
 
+### J8 A member asks an agent why it is waiting
+
+1. given the sample agents running and the Sender waiting for an approval
+2. when the member opens "Ask Sender" from the "Needs you" row and chooses "What are you waiting for?"
+3. then the reply is in plain sentences, the approval card is in the thread, and no tool or model names appear
+4. when the member types "approve" in the text box
+5. after: nothing is approved and the agent says approvals are decided on the card
+6. when the member approves on the card
+7. after: the reply is sent once and the thread says so in plain words
+8. negative: a member without approval rights sees the card as read-only with the reason
+
 ## Load and soak
 
 - **Load.** 100 agents, 50 concurrent attempts, 100,000 tasks a day for 24
@@ -294,6 +320,6 @@ only, and bounded waits.
 
 ## Exit criteria for this plan's testing
 
-All of L, C, R, A, P, X, G, H and W automated and green; J1 to J7 green and published as
+All of L, C, R, A, P, X, G, H, W and T automated and green; J1 to J8 green and published as
 PR evidence; O3 and O4 green; the load test run once with its results recorded.
 Nothing proceeds to the pilot with a red or skipped item in this list.

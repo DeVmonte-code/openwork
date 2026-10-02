@@ -416,6 +416,30 @@ the data class, with the lowest load. The choice is stored on the task, so
 retries go to the same agent unless it is reassigned. Agents never see or choose
 a process, host or URL.
 
+## Conversations with a person
+
+Talking to an agent from the Orchestrator is made of ordinary tasks, so every guarantee in this
+plan applies to it with no new machinery.
+
+- A conversation is an A2A `contextId` ([a2a.md](a2a.md)). Each message the person sends is a
+  root task of type `chat.message` for that agent, with the same `contextId` as the earlier turns.
+  Its payload is `{ "text": "…" }`, at most 4,000 characters, plus the id of the task the person
+  was looking at, if any.
+- The agent answers with `task.complete` (a text result) or asks back with
+  `task.clarify.request`, whose options the panel shows as buttons. Status lines come from
+  `task.status`.
+- An agent can be asked questions only if it lists `chat.message` in `role.accepts`. The builder
+  offers this as one switch, "Can be asked questions", which adds the type and a default request.
+  Without it the panel is hidden and says why.
+- The origin is `member_ui`, so the text is trusted as the member's own. The agent's tools,
+  approvals, budgets and loop guards are unchanged. Typing "approve" is just text: an approval is a
+  separate object decided only by its card.
+- The agent sees earlier turns of the same conversation within its context budget, from the task
+  memory scope of the conversation's tasks. Nothing from one person's conversation is shown to
+  another unless they can view the agent's tasks.
+- Messages are stored like other messages, with the same retention. They are not ledger entries
+  unless they cause a governed change.
+
 ## Status, clarification, completion
 
 - **Status.** `task.status` shows in the live view and the task timeline. It

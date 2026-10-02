@@ -140,9 +140,17 @@ attention marker, in whichever workspace the person is. The chat is not interrup
 - It opens the new-task composer. The workspace comes from the existing destination menu.
   The default is the workspace that started the task if it is on this device, otherwise
   the one in use.
-- The draft holds a short summary and a link to the task, built in the browser from fields
-  the member can already see. If they lack `orchestrator.view_content`, the summary has the
-  state and title only. Nothing is posted from the server.
+- The draft is plain text that stands on its own: the title, the state and what is being asked,
+  built in the browser from fields the member can already see, then a request for help deciding.
+  It ends with one line telling the chat that it cannot change anything in the Orchestrator. If
+  the member lacks `orchestrator.view_content`, the draft has the state and title only. Nothing
+  is posted from the server.
+- **No link in the draft until L1 exists.** A link to a local page is useless to a chat that has no
+  way to read it, and it sends the chat looking for tools. Once the `orchestrator:*` capabilities
+  exist, the draft may name the task id so the chat can read it with `orchestrator:get_task`.
+- **This is the second-best way to talk to an agent.** The first is the conversation inside the
+  Orchestrator ([ui.md](ui.md), "Asking an agent"). A general chat does not know the agent, its
+  task or its approvals.
 - Nothing is sent and nothing navigates unasked (`DESIGN.md` S5). The person reads the draft
   and sends it.
 - The chat can then keep current with `orchestrator:get_task`.

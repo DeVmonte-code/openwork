@@ -241,14 +241,41 @@ ledger and can be reversed. Without `orchestrator.activate` the controls show a 
 who can change it (P4, C5). Agents cannot change the hierarchy from the interface either:
 there is no agent-readable command for it.
 
+### Asking an agent
+
+The friendly way to talk to an agent is a conversation inside the Orchestrator, not a general
+chat. A general chat does not know the agent, its task or its approvals, so it answers with
+guesses and shows its own tool rows.
+
+- **Where.** "Ask Sender" is a quiet action on each "Needs you" row, on the task page and on the
+  agent page. On the approval row, Approve and Decline stay the focal actions (P7). "Discuss in
+  chat" moves into a "More" menu.
+- **What it looks like.** One focused panel: a title ("Ask Sender"), one line saying what it is
+  about, three or four starter questions taken from the agent's example requests ("What are you
+  waiting for?", "Why does this need my approval?"), the messages, and a text box. Messages are
+  plain sentences. A question from the agent shows its options as buttons. The agent's work
+  appears as plain status lines ("Sender is looking at the draft"), never tool names, model names
+  or "thought" rows; those sit under Details.
+- **Approvals stay cards.** If the agent is waiting for an approval, the consent card appears in
+  the conversation, and it is the only way to approve. Typing "approve" in the text box approves
+  nothing, and the agent says so (P9).
+- **Honest about what is live.** In the preview the replies are sample text and a line says no
+  agent was contacted and nothing was saved. With the service, the replies are the agent's.
+- **Accessible.** Focus goes to the text box on open and returns to the opener on close; Esc
+  closes; the messages are a polite live region; a phone gets a full-screen sheet.
+
+How it works behind the panel is in [messaging.md](messaging.md), "Conversations with a person".
+Tests are group T in [test-plan.md](test-plan.md).
+
 ### Linking to chats and workspaces
 
 Details in [workspaces-and-chat.md](workspaces-and-chat.md). On the interface:
 
 - **Discuss in chat** is on the task page, on a "Needs you" row menu and on the agent page. It
   opens the new-task composer, with the workspace chosen in the existing destination menu and
-  a draft that holds a short summary and a link. Nothing is sent and nothing navigates unasked
-  (S5). The summary uses only what the member may view.
+  a self-contained plain-text draft: title, state, what is asked, and a request for help deciding.
+  It has no link, because a general chat cannot open one. Nothing is sent and nothing navigates
+  unasked (S5). The draft uses only what the member may view.
 - A task that came from a chat reads "Started from a chat". **Open chat** appears beside it only
   when that workspace is on this device and the signed-in member started it. Elsewhere there is
   no link, never a broken one.
