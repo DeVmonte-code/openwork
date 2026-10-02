@@ -33,7 +33,6 @@ export type DiscussionSummary = {
 export function discussionDraft(
   item: DiscussionSummary,
   limited: boolean,
-  orchestratorUrl: string,
   templates: { normal: string; limited: string },
 ): string {
   // In limited view even a template containing an agent/action token cannot leak it.
@@ -42,5 +41,5 @@ export function discussionDraft(
     : { title: item.title, state: item.state, agent: item.agent, action: item.action };
   const template = limited ? templates.limited : templates.normal;
   const summary = template.replace(/\{(title|state|agent|action)\}/g, (_token, key: string) => visible[key] ?? "").trim();
-  return `${summary}\n\n${orchestratorUrl}`;
+  return summary;
 }

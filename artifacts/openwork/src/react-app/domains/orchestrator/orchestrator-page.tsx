@@ -1,20 +1,25 @@
 /** @jsxImportSource react */
-import { useEffect, useState } from "react";
-import { LockIcon, PauseIcon, PlayIcon } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { LockIcon, MoreHorizontalIcon, PauseIcon, PlayIcon } from "lucide-react";
 import { NavLink, useLocation, useSearchParams } from "react-router";
 import { workspaceSessionRoute } from "@/react-app/shell/workspace-routes";
 
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/sonner";
 import { t } from "@/i18n";
 import { AgentBuilder } from "./agent-builder";
 import { HierarchyView } from "./hierarchy-view";
+import { ApprovalCard } from "./orchestrator-approval-card";
+import { ConversationPanel } from "./orchestrator-conversation-panel";
+import type { ConversationSubject } from "./orchestrator-conversation";
 import { orchestratorPreview, useOrchestratorPreview, type AgentId } from "./orchestrator-preview";
 import {
   discussionDraft,
   discussionWorkspace,
   originChatAvailable,
+  type DiscussionSummary,
   type DiscussionWorkspace,
   type NeedOrigin,
 } from "./orchestrator-discussion";
@@ -71,46 +76,53 @@ function NeedOriginLine({ origin, workspaces }: { origin: NeedOrigin; workspaces
   );
 }
 
-function DiscussInChat({
-  origin,
-  item,
-  locked,
-  discussion,
+function NeedActions({
+  origin, item, locked, discussion, agentId, source, onAsk,
 }: {
   origin: NeedOrigin;
-  item: { title: string; state: string; agent: string; action: string };
+  item: DiscussionSummary;
   locked: boolean;
   discussion?: OrchestratorDiscussionContext;
+  agentId: AgentId;
+  source: "approval" | "question" | "outsideQuestion";
+  onAsk: (subject: ConversationSubject, opener: HTMLElement) => void;
 }) {
   const workspaces = discussion?.workspaces ?? [];
   const workspaceId = discussionWorkspace(origin, workspaces, discussion?.currentWorkspaceId);
+  const available = !!workspaceId && !!discussion;
   return (
-    <div className="flex items-center gap-2">
-      {!workspaceId ? (
-        <span className="flex items-center gap-1 text-xs text-muted-foreground">
-          <LockIcon className="size-3.5" aria-hidden="true" />
-          {t("orchestrator.discuss_no_workspace")}
-        </span>
-      ) : null}
+    <div className="flex items-center gap-1">
       <Button
-        variant="ghost"
-        size="sm"
-        disabled={!workspaceId || !discussion}
-        onClick={() => {
-          if (!workspaceId || !discussion) return;
-          discussion.openDraft(workspaceId, discussionDraft(
-            item,
-            locked,
-            new URL(`${window.location.pathname}${locked ? "?state=locked" : ""}`, window.location.origin).toString(),
-            {
-              normal: t("orchestrator.discuss_draft_normal"),
-              limited: t("orchestrator.discuss_draft_limited"),
-            },
-          ));
-        }}
+        variant="ghost" size="sm" className="text-muted-foreground" data-ask-agent={agentId}
+        onClick={(e) => onAsk({ ...item, agentId, source }, e.currentTarget)}
       >
-        {t("orchestrator.discuss_in_chat")}
+        {t("orchestrator.ask_agent", { agent: item.agent })}
       </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={<Button variant="ghost" size="icon-sm" aria-label={t("orchestrator.more_actions", { title: item.title })} />}
+        >
+          <MoreHorizontalIcon className="size-4" aria-hidden="true" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem
+            disabled={!available}
+            onClick={() => {
+              if (!workspaceId || !discussion) return;
+              discussion.openDraft(workspaceId, discussionDraft(item, locked, {
+                normal: t("orchestrator.discuss_draft_normal"),
+                limited: t("orchestrator.discuss_draft_limited"),
+              }));
+            }}
+          >
+            {!available ? <LockIcon className="size-4" aria-hidden="true" /> : null}
+            <span className="flex flex-col">
+              {t("orchestrator.discuss_in_chat")}
+              {!available ? <span className="text-xs text-muted-foreground">{t("orchestrator.discuss_no_workspace")}</span> : null}
+            </span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }
@@ -135,6 +147,26 @@ export function OrchestratorPage({
     orchestratorPreview.bindSampleOriginWorkspace(discussion?.workspaces[0]?.id);
   }, [discussion?.workspaces]);
   const locked = state === "locked";
+  const [conversation, setConversation] = useState<{ subject: ConversationSubject; key: number } | null>(null);
+  const [conversationOpen, setConversationOpen] = useState(false);
+  const opener = useRef<HTMLElement | null>(null);
+  const pageRef = useRef<HTMLElement>(null);
+  const conversationKey = useRef(0);
+  const openConversation = (subject: ConversationSubject, from: HTMLElement) => {
+    opener.current = from;
+    conversationKey.current += 1;
+    setConversation({ subject, key: conversationKey.current });
+    setConversationOpen(true);
+  };
+  // The opener may disappear (an approved card): fall back to the same agent's
+  // Ask button, then the page itself.
+  const restoreFocus = () => {
+    const node = opener.current;
+    if (node && node.isConnected) return node;
+    const agentId = conversation?.subject.agentId;
+    const fallback = agentId ? pageRef.current?.querySelector<HTMLElement>(`[data-ask-agent="${agentId}"]`) : null;
+    return fallback ?? pageRef.current;
+  };
 
   const toggle = (id: AgentId, name: string) => {
     const prior = snap.agents[id];
@@ -191,19 +223,10 @@ export function OrchestratorPage({
           <section aria-labelledby="orch-needs" className="flex flex-col gap-3">
             <h2 id="orch-needs" className="text-xs font-medium text-muted-foreground">{t("orchestrator.needs_you")}</h2>
             {snap.approvalWaiting ? (
-              <div className="flex flex-col gap-3 rounded-xl border border-border p-4">
-                <p className="text-sm font-medium">{t("orchestrator.approval_action")}</p>
-                <dl className="grid grid-cols-[5rem_1fr] gap-x-3 gap-y-1 text-xs">
-                  <dt className="text-muted-foreground">{t("orchestrator.approval_agent")}</dt><dd>{t("orchestrator.approval_sender")}</dd>
-                  <dt className="text-muted-foreground">{t("orchestrator.approval_data")}</dt><dd>{t("orchestrator.approval_data_value")}</dd>
-                  <dt className="text-muted-foreground">{t("orchestrator.approval_risk")}</dt><dd>{t("orchestrator.approval_risk_value")}</dd>
-                </dl>
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => { orchestratorPreview.resolveApproval(); toast(t("orchestrator.toast_declined")); }}>{t("orchestrator.decline")}</Button>
-                    <Button size="sm" onClick={() => { orchestratorPreview.resolveApproval(); toast.success(t("orchestrator.toast_sent")); }}>{t("orchestrator.approve")}</Button>
-                  </div>
-                  <DiscussInChat
+              <ApprovalCard
+                locked={locked}
+                extra={(
+                  <NeedActions
                     origin={snap.needOrigins.approval}
                     item={{
                       title: t("orchestrator.sender_approval_title"),
@@ -213,17 +236,20 @@ export function OrchestratorPage({
                     }}
                     locked={locked}
                     discussion={discussion}
+                    agentId="sender"
+                    source="approval"
+                    onAsk={openConversation}
                   />
-                </div>
-                <NeedOriginLine origin={snap.needOrigins.approval} workspaces={discussion?.workspaces ?? []} />
-              </div>
+                )}
+                footer={<NeedOriginLine origin={snap.needOrigins.approval} workspaces={discussion?.workspaces ?? []} />}
+              />
             ) : null}
             {snap.questionOpen ? (
               <div className="flex flex-col gap-1 border-y border-border py-2">
                 <div className="flex min-h-10 items-center justify-between gap-3">
                   <p className="min-w-0 text-sm">{t("orchestrator.question")} <span className="text-xs text-muted-foreground">· {t("orchestrator.question_agent")}</span></p>
                   <div className="flex shrink-0 items-center gap-1">
-                    <DiscussInChat
+                    <NeedActions
                       origin={snap.needOrigins.question}
                       item={{
                         title: t("orchestrator.drafter_question_title"),
@@ -233,6 +259,9 @@ export function OrchestratorPage({
                       }}
                       locked={locked}
                       discussion={discussion}
+                      agentId="drafter"
+                      source="question"
+                      onAsk={openConversation}
                     />
                     <Button variant="secondary" size="sm" onClick={() => toast(t("orchestrator.toast_answered"))}>{t("orchestrator.answer")}</Button>
                   </div>
@@ -245,7 +274,7 @@ export function OrchestratorPage({
                 <div className="flex min-h-10 items-center justify-between gap-3">
                   <p className="min-w-0 text-sm">{t("orchestrator.outside_question")} <span className="text-xs text-muted-foreground">· {t("orchestrator.research_agent")}</span></p>
                   <div className="flex shrink-0 items-center gap-1">
-                    <DiscussInChat
+                    <NeedActions
                       origin={snap.needOrigins.outsideQuestion}
                       item={{
                         title: t("orchestrator.outside_question_title"),
@@ -255,6 +284,9 @@ export function OrchestratorPage({
                       }}
                       locked={locked}
                       discussion={discussion}
+                      agentId="research"
+                      source="outsideQuestion"
+                      onAsk={openConversation}
                     />
                     <Button variant="secondary" size="sm" onClick={() => toast(t("orchestrator.toast_answered"))}>{t("orchestrator.answer")}</Button>
                   </div>
@@ -287,6 +319,23 @@ export function OrchestratorPage({
                     {[d.activity, d.queue, `${a.cost} ${t("orchestrator.today_cost")}`].filter(Boolean).join(" · ")}
                   </span>
                   <span className="shrink-0 text-xs">{t(paused ? "orchestrator.state_paused" : "orchestrator.state_running")}</span>
+                  <Button
+                    variant="ghost" size="xs" className="shrink-0 text-muted-foreground" data-ask-agent={a.id}
+                    onClick={(e) => openConversation({
+                      title: name,
+                      state: t(paused ? "orchestrator.state_paused" : "orchestrator.state_running"),
+                      agent: name,
+                      action: a.id === "drafter"
+                        ? t("orchestrator.drafter_question_summary_action")
+                        : a.id === "research"
+                          ? t("orchestrator.outside_question_summary_action")
+                          : d.activity,
+                      agentId: a.id,
+                      source: "agent",
+                    }, e.currentTarget)}
+                  >
+                    {t("orchestrator.ask_agent", { agent: name })}
+                  </Button>
                   <Button variant="ghost" size="icon-sm" aria-label={label} title={label} disabled={locked} onClick={() => toggle(a.id, name)}>
                     {paused ? <PlayIcon className="size-4" /> : <PauseIcon className="size-4" />}
                   </Button>
@@ -300,7 +349,7 @@ export function OrchestratorPage({
   }
 
   return (
-    <section data-orchestrator-page aria-label={t("orchestrator.title")} className="h-full min-h-0 overflow-y-auto">
+    <section ref={pageRef} tabIndex={-1} data-orchestrator-page aria-label={t("orchestrator.title")} className="h-full min-h-0 overflow-y-auto outline-none">
       <div className={`mx-auto flex w-full ${isHierarchy ? "max-w-300" : "max-w-198"} flex-col gap-5 px-4 pb-12 pt-12 lg:pt-32`}>
         {heading}
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -323,6 +372,17 @@ export function OrchestratorPage({
         ) : null}
         {building && !locked && !isHierarchy ? <AgentBuilder onClose={() => setBuilding(false)} /> : body}
       </div>
+      {conversation ? (
+        <ConversationPanel
+          key={conversation.key}
+          subject={conversation.subject}
+          open={conversationOpen}
+          limited={locked}
+          onOpenChange={setConversationOpen}
+          onClosed={() => setConversation(null)}
+          finalFocus={restoreFocus}
+        />
+      ) : null}
     </section>
   );
 }

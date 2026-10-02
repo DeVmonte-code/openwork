@@ -2,7 +2,7 @@ import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./tests",
-  testMatch: ["migration.spec.ts", "orchestrator-hierarchy.spec.ts", "orchestrator-discussion.spec.ts", "agent-builder.spec.ts"],
+  testMatch: ["migration.spec.ts", "orchestrator-hierarchy.spec.ts", "orchestrator-discussion.spec.ts", "agent-builder.spec.ts", "orchestrator-conversation.spec.ts"],
   outputDir: "./test-results",
   fullyParallel: false,
   forbidOnly: Boolean(process.env.CI),

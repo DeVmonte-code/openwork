@@ -14,3 +14,9 @@ Base UI control identity can differ from native HTML: a Switch's supplied id bel
 **Why:** Clicking that id in a browser test repeatedly targeted an off-screen hidden input although the visible, accessible control worked.
 
 **How to apply:** Exercise switches through their accessible role and label. Check validation attributes on the visible control rather than assuming a supplied id identifies the interactive element.
+
+Read opener metadata before opening a modal dialog, not through background role locators while the dialog is open.
+
+**Why:** Base UI hides the background page from the accessibility tree. Playwright's default role locators consequently stop resolving background buttons, even when the buttons remain in the DOM, causing misleading timeouts.
+
+**How to apply:** Capture an opener's label before activating it. Query controls inside the dialog while it is open, and wait for the dialog to close before asserting background focus or interacting with the page again.

@@ -230,7 +230,8 @@ async function openNeedsYou(page: Page, query = "") {
 }
 
 async function openComposerFor(page: Page, item = "Sender approval") {
-  await page.getByRole("button", { name: "Discuss in chat" }).nth(item === "Sender approval" ? 0 : item === "Drafter question" ? 1 : 2).click();
+  await page.getByRole("button", { name: `More actions for ${item}` }).click();
+  await page.getByRole("menuitem", { name: "Discuss in chat", exact: true }).click();
   await expect(page.locator("[data-chat-empty-hero]")).toBeVisible();
   await expect(page.locator('[contenteditable="true"]')).toBeVisible();
 }
@@ -270,7 +271,9 @@ test("Discuss in chat opens the real new-task composer in the originating worksp
   await expect(page).toHaveURL(/\/workspace\/origin-workspace\/session$/);
   await expect(editor).toContainText("Sender needs your input to approve sending a reply to 1 recipient.");
   await expect(editor).toContainText("Sender approval is waiting for approval.");
-  await expect(editor).toContainText(new URL("/orchestrator", origin).toString());
+  await expect(editor).toContainText("Help me decide what to do.");
+  await expect(editor).toContainText("You cannot change anything in the Orchestrator.");
+  await expect(editor).not.toContainText("http");
   await expect(page.getByRole("button", { name: "Run task", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Workspace destination" }).click();
   await expect(page.getByRole("menuitemradio", { name: "Origin workspace" })).toBeVisible();
@@ -292,14 +295,15 @@ test("unavailable chat origin uses the current workspace and outside-tool item u
   await expect(page).toHaveURL(/\/workspace\/current-workspace\/session$/);
   const editor = page.locator('[contenteditable="true"]');
   await expect(editor).toContainText("Drafter needs your input to choose a sender address.");
-  await expect(editor).toContainText(new URL("/orchestrator", origin).toString());
+  await expect(editor).not.toContainText("http");
+  await expect(editor).toContainText("You cannot change anything in the Orchestrator.");
 
   await openNeedsYou(page, "?fixture=no-current");
   await openComposerFor(page, "Research question");
   await expect(page).toHaveURL(/\/workspace\/origin-workspace\/session$/);
 });
 
-test("locked Discuss draft contains only the item title and state plus the Orchestrator link", async ({
+test("locked Discuss draft contains only the item title and state", async ({
   page,
 }, testInfo) => {
   await openNeedsYou(page, "?state=locked");
@@ -307,7 +311,8 @@ test("locked Discuss draft contains only the item title and state plus the Orche
   await openComposerFor(page);
   const editor = page.locator('[contenteditable="true"]');
   await expect(editor).toContainText("Sender approval is waiting for approval.");
-  await expect(editor).toContainText(new URL("/orchestrator?state=locked", origin).toString());
+  await expect(editor).toHaveText("Sender approval is waiting for approval.");
+  await expect(editor).not.toContainText("http");
   await expect(editor).not.toContainText("Sender needs your input");
   await expect(editor).not.toContainText("recipient");
   await expect(editor).not.toContainText("drafted reply");
@@ -320,10 +325,16 @@ test("locked Discuss draft contains only the item title and state plus the Orche
 
 test("keeps Discuss visible and explains why it is unavailable when no workspace exists", async ({ page }) => {
   await openNeedsYou(page, "?fixture=no-workspaces");
-  const discussButtons = page.getByRole("button", { name: "Discuss in chat", exact: true });
-  await expect(discussButtons).toHaveCount(3);
-  for (const button of await discussButtons.all()) {
-    await expect(button).toBeDisabled();
+  const moreButtons = page.getByRole("button", { name: /^More actions for / });
+  await expect(moreButtons).toHaveCount(3);
+  for (const button of await moreButtons.all()) {
+    await button.click();
+    const label = await button.getAttribute("aria-label");
+    if (!label) throw new Error("More menu has no accessible label");
+    const menu = page.getByRole("menu", { name: label, exact: true });
+    await expect(menu.getByRole("menuitem", { name: /Discuss in chat/ })).toBeDisabled();
+    await expect(menu.getByText("No workspace is available.", { exact: true })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(menu).toBeHidden();
   }
-  await expect(page.getByText("No workspace is available.", { exact: true })).toHaveCount(3);
 });

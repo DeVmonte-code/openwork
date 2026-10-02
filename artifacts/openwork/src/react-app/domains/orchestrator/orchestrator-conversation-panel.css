@@ -1,0 +1,8 @@
+@media (prefers-reduced-motion: reduce) {
+  [data-conversation-panel],
+  [data-conversation-panel] [data-slot="sheet-close"],
+  body:has([data-conversation-panel]) [data-slot="sheet-overlay"] {
+    transition: none !important;
+    animation: none !important;
+  }
+}

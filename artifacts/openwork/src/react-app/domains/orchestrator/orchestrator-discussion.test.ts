@@ -40,21 +40,20 @@ describe("Orchestrator discussion destination", () => {
 
 describe("Orchestrator discussion draft", () => {
   const item = { title: "Sender approval", state: "waiting for approval", agent: "Sender", action: "Send reply to 1 recipient." };
-  const templates = { normal: "{title} is {state}. {agent} needs input on: {action}", limited: "{title} is {state}." };
-  const url = "https://example.test/orchestrator";
-  test("normal draft includes the action, agent and link back", () => {
-    expect(discussionDraft(item, false, url, templates)).toBe(
-      "Sender approval is waiting for approval. Sender needs input on: Send reply to 1 recipient.\n\nhttps://example.test/orchestrator",
+  const templates = { normal: "{title} is {state}. {agent} needs input on: {action}\nHelp me decide.\nYou cannot change anything in the Orchestrator.", limited: "{title} is {state}." };
+  test("normal draft is self-contained and asks for help without granting permission", () => {
+    expect(discussionDraft(item, false, templates)).toBe(
+      "Sender approval is waiting for approval. Sender needs input on: Send reply to 1 recipient.\nHelp me decide.\nYou cannot change anything in the Orchestrator.",
     );
   });
-  test("limited draft contains only title, state and link back", () => {
-    expect(discussionDraft(item, true, url, templates)).toBe(
-      "Sender approval is waiting for approval.\n\nhttps://example.test/orchestrator",
+  test("limited draft contains only title and state", () => {
+    expect(discussionDraft(item, true, templates)).toBe(
+      "Sender approval is waiting for approval.",
     );
   });
   test("limited draft never expands protected tokens even in an incorrect template", () => {
-    expect(discussionDraft(item, true, url, { ...templates, limited: "{title}: {state}; {agent}{action}" })).toBe(
-      "Sender approval: waiting for approval;\n\nhttps://example.test/orchestrator",
+    expect(discussionDraft(item, true, { ...templates, limited: "{title}: {state}; {agent}{action}" })).toBe(
+      "Sender approval: waiting for approval;",
     );
   });
 });
