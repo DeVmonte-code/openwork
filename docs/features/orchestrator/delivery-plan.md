@@ -228,7 +228,7 @@ default that turns out wrong changes the named document.
 | --- | --- | --- | --- |
 | 1 | Deployment environment | **Decided: the pilot runs self-hosted on one local device the team controls** ([operations.md](operations.md), "Local single-device profile"). Kubernetes (EKS, AKS, GKE) and hybrid runners stay supported for later | Which machine, and that it stays on |
 | 2 | Implementation stack | The existing one: TypeScript, Hono, Drizzle on MySQL, React, TanStack Query, Zod; MySQL as the queue | Confirmation that no separate broker is wanted |
-| 3 | Initial agents and process | The six in [sample-process.md](sample-process.md), plus a coordinator over them | The first real, low-risk internal process |
+| 3 | Initial agents and process | The six in [sample-process.md](sample-process.md), plus a coordinator over them. **Connectors decided:** all the organization has connected through the gateway, with a per-agent allow list and the risk rules in [governance.md](governance.md) (D27) | The first real, low-risk internal process |
 | 4 | Availability and recovery targets | [operations.md](operations.md) section 3 | Required uptime, RPO and RTO |
 | 5 | Autonomy boundary | Reads and drafts are autonomous; every external write is approved; irreversible actions are off | Which actions are irreversible for the pilot process, and who approves |
 | 6 | Data classification | `public`, `internal`, `confidential`, `restricted` | The organization's scheme, and which model providers may receive which class |
@@ -238,7 +238,7 @@ default that turns out wrong changes the named document.
 | 10 | A2A details ([a2a.md](a2a.md), "Open items") | HTTP+JSON binding, internal exposure only, no remote agents in the pilot | Binding confirmed by an interop test, the extension namespace, whether cards may be shared outside the organization, and where card signing keys live |
 | 11 | Which tree the code is built in (D17) | The original layout; the Replit workspace stays a preview | Confirmation that the fork's `dev` should keep the Replit layout, or return to the original one |
 | 12 | Hierarchy details ([hierarchy.md](hierarchy.md), "Assumptions to confirm") | One root; one manager per agent; five levels with the powers and reliances in that page; a span limit of 7, flagged not blocked; "active" means not draft or retired; escalation level read as an impact level; "reassign" read as moving work, with moving the agent a person's change; existing ids and slugs, not `AG-001` codes | Confirmation of each, above all the span limit, the powers at each control degree, and whether a display code is wanted |
-| 13 | Workspaces and chats ([workspaces-and-chat.md](workspaces-and-chat.md)) | **Decided:** a chat may list the agents visible to members, submit, read and relay the person's answer, never approve; "Discuss in chat" defaults to the workspace that started the task if it is on this device. Agents bound to a workspace come after the pilot | Who owns a workspace binding, the agent's owner or the organization |
+| 13 | Workspaces and chats ([workspaces-and-chat.md](workspaces-and-chat.md)) | **Decided:** a chat may list the agents visible to members, submit, read and relay the person's answer, never approve; "Discuss in chat" defaults to the workspace that started the task if it is on this device. Agents bound to a workspace come after the pilot | None: decided as both, with different rights (D26) |
 
 ## The brief's artefacts
 

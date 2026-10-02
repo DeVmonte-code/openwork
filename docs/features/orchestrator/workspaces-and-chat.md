@@ -243,7 +243,17 @@ Your answers, 2026-10-02:
 - A chat sees only the agents made visible to members.
 - The Replit preview gets "Discuss in chat" and the origin line.
 
-## Still open
+## Decided later
 
-When cloud-bound and desktop-bound agents arrive, does the agent's owner or the organization
-own the workspace binding?
+- **Who holds a workspace binding (D26).** Both, with different rights. The agent's owner creates the
+  binding and can change or remove it. The organization, through `orchestrator.admin`, can see every
+  binding, limit which kinds are allowed by policy, and revoke any of them. A revoked binding
+  pauses the agent and raises an attention item; it never deletes history. The owner's answer was
+  "yes" to "owner or organization"; this reading is the one that gives each the control it needs, and
+  it is open to correction.
+- **Connectors for the first pilot (D27).** All the connectors an organization has made available
+  through the gateway are usable, not a short fixed list. Each agent still has its own explicit allow
+  list (`tools.allow`), and risk decides who must approve: reads run on their own, reversible writes
+  are limited by the agent's configuration, writes outside the organization need a person, and
+  irreversible actions stay off until the organization turns them on. The pilot starts every
+  agent in a read-only stage and adds writes one agent at a time.
