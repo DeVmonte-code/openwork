@@ -3,3 +3,4 @@
 - [Runtime auto-installation](runtime-auto-installation.md) — avoid Python for Node-only edits when dependencies and environment changes are prohibited.
 - [Verification evidence](verification-evidence.md) — temporary logs may disappear; retain exact commands and final results in the delivery report.
 - [Windows cleanup risk](windows-cleanup-risk.md) — dead-parent PID tree termination is not reliable ownership of surviving native helpers.
+- [Local platform goals](local-platform-goals.md) — the owner runs this app on a Mac; distinguish cross-platform package resolution from actual native execution.

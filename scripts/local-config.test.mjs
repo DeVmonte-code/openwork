@@ -32,16 +32,18 @@ test("does not overflow the port range", async () => {
 });
 
 test("builds separate server environments without changing the parent", () => {
-  const base = { PORT: "3000", BASE_PATH: "/old", KEEP: "value" };
+  const base = { PORT: "3000", BASE_PATH: "/old", HOST: "0.0.0.0", KEEP: "value" };
   const env = localEnvironments(base, 5174, 8789);
   assert.equal(env.api.PORT, "8789");
   assert.equal(env.web.PORT, "5174");
   assert.equal(env.api.NODE_ENV, "development");
+  assert.equal(env.api.HOST, "127.0.0.1");
+  assert.equal(env.web.HOST, "127.0.0.1");
   assert.equal(env.web.BASE_PATH, "/");
   assert.equal(env.web.OPENWORK_LOCAL_API_URL, "http://127.0.0.1:8789");
   assert.equal(env.web.KEEP, "value");
   assert.equal(env.web.VITE_OPENWORK_FORCE_MANUAL_AUTH, undefined);
-  assert.deepEqual(base, { PORT: "3000", BASE_PATH: "/old", KEEP: "value" });
+  assert.deepEqual(base, { PORT: "3000", BASE_PATH: "/old", HOST: "0.0.0.0", KEEP: "value" });
 });
 
 test("preserves explicit existing authentication configuration", () => {

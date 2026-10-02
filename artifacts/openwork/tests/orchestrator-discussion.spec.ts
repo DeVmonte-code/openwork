@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { optimizedImportResolver } from "./optimized-imports";
 
 declare global {
   interface Window {
@@ -18,11 +19,7 @@ const pageModule = "/src/react-app/domains/orchestrator/orchestrator-page.tsx";
 let componentDocument = "";
 
 test.beforeAll(async () => {
-  const response = await fetch(new URL(pageModule, origin));
-  if (!response.ok) throw new Error(`Could not inspect the running Vite module: ${response.status}`);
-  const transformed = await response.text();
-  const version = transformed.match(/react-router\.js\?v=([^'"]+)/)?.[1];
-  if (!version) throw new Error("Cannot determine the running preview's optimized module version");
+  const resolveImport = await optimizedImportResolver(origin, [pageModule, "/src/index.react.tsx"]);
 
   componentDocument = `<!doctype html>
 <html data-theme="light">
@@ -114,7 +111,7 @@ createRoot(document.getElementById('root')).render(
 );
 </script></body></html>`.replace(
     /\/node_modules\/\.vite\/deps\/[^'"]+\.js/g,
-    (url) => `${url}?v=${version}`,
+    resolveImport,
   );
 });
 

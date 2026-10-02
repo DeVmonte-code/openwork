@@ -28,13 +28,13 @@ export function portAvailable(port) {
       if (error.code === "EADDRINUSE" || error.code === "EACCES") resolve(false);
       else reject(error);
     });
-    // Match the API's wildcard listen, including dual-stack systems.
-    server.listen(port, () => server.close(() => resolve(true)));
+    // Match both local servers: availability on other interfaces is irrelevant.
+    server.listen(port, "127.0.0.1", () => server.close(() => resolve(true)));
   });
 }
 
 export function localEnvironments(base, webPort, apiPort) {
-  const shared = { ...base, NODE_ENV: "development", BASE_PATH: "/" };
+  const shared = { ...base, NODE_ENV: "development", BASE_PATH: "/", HOST: "127.0.0.1" };
   return {
     api: { ...shared, PORT: String(apiPort) },
     web: {

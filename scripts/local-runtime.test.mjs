@@ -5,6 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { setTimeout as delay } from "node:timers/promises";
 import { promisify } from "node:util";
+import { readFile } from "node:fs/promises";
 import { test } from "node:test";
 import { portAvailable } from "./local-config.mjs";
 
@@ -155,4 +156,64 @@ test("Ctrl+C during API build stops startup without leftover ports", options, as
     assert.equal(runner.output().includes("[local] Ready"), false);
     await assertReleased(api, web);
   } finally { await runner.stop(); }
+});
+
+async function listenerAddresses(port) {
+  const addresses = [];
+  for (const table of ["/proc/net/tcp", "/proc/net/tcp6"]) {
+    let contents;
+    try {
+      contents = await readFile(table, "utf8");
+    } catch (error) {
+      // Kernels with IPv6 disabled expose no tcp6 table. IPv4 is mandatory.
+      if (table.endsWith("tcp6") && error.code === "ENOENT") continue;
+      throw error;
+    }
+    const rows = contents.trim().split("\n").slice(1);
+    for (const row of rows) {
+      const fields = row.trim().split(/\s+/);
+      const [address, hexPort] = fields[1].split(":");
+      if (fields[3] === "0A" && Number.parseInt(hexPort, 16) === port) addresses.push(address);
+    }
+  }
+  return addresses;
+}
+
+test("local API and Vite bind exclusively to IPv4 loopback even with an inherited wildcard HOST", options, async () => {
+  const { api, web, env } = await ports();
+  const runner = run({ ...env, HOST: "0.0.0.0" });
+  try {
+    await runner.ready();
+    // Inspect kernel LISTEN sockets, not just successful loopback requests:
+    // a wildcard server would also accept those requests.
+    assert.deepEqual(await listenerAddresses(api), ["0100007F"]);
+    assert.deepEqual(await listenerAddresses(web), ["0100007F"]);
+    assert.equal((await fetch(`http://127.0.0.1:${web}/api/healthz`)).status, 200);
+  } finally { await runner.stop(); }
+  await assertReleased(api, web);
+});
+
+test("API without HOST keeps the all-interface Replit default", options, async () => {
+  const api = await unusedPort();
+  const env = { ...process.env, PORT: String(api), NODE_ENV: "development" };
+  delete env.HOST;
+  const child = spawn(process.execPath, ["artifacts/api-server/dist/index.mjs"], {
+    cwd: root, env, stdio: "ignore",
+  });
+  let ended = false;
+  child.once("exit", () => { ended = true; });
+  try {
+    await poll(async () => {
+      if (ended) throw new Error("API exited before listening");
+      return (await listenerAddresses(api)).length > 0;
+    }, "API default listener");
+    const addresses = await listenerAddresses(api);
+    assert.equal(addresses.length, 1);
+    assert.ok(["00000000", "00000000000000000000000000000000"].includes(addresses[0]));
+    assert.equal((await fetch(`http://127.0.0.1:${api}/api/healthz`)).status, 200);
+  } finally {
+    child.kill("SIGTERM");
+    await poll(() => ended, "default API stopped");
+  }
+  assert.equal(await portAvailable(api), true);
 });
