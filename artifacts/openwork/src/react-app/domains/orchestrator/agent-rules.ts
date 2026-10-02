@@ -1,14 +1,14 @@
 import { agentSlug, type AgentDraft, type DraftContext, type DraftIssue, type DraftRequest, type DraftSkill } from "./agent-draft";
-import { SAMPLE_CAPABILITIES, SAMPLE_MEMORY, SAMPLE_PEOPLE, SAMPLE_SKILLS } from "./agent-samples";
+import { SAMPLE_CAPABILITIES, SAMPLE_MEMORY, SAMPLE_PEOPLE, SAMPLE_POLICY, SAMPLE_SKILLS, type SamplePolicy } from "./agent-samples";
 
 const canonical = (value: string) => value.trim().toLowerCase();
 const duplicates = (values: string[]) => new Set(values).size !== values.length;
 
-export function checkAgentDraft(draft: AgentDraft, context: DraftContext): DraftIssue[] {
+export function checkAgentDraft(draft: AgentDraft, context: DraftContext, policy: Readonly<SamplePolicy> = SAMPLE_POLICY): DraftIssue[] {
   const issues: DraftIssue[] = [];
-  const add = (code: string, field: string, severity: "error" | "warning" = "error") => {
+  const add = (code: string, field: string, severity: "error" | "warning" = "error", params: Record<string, string | number> = {}) => {
     if (!issues.some(issue => issue.code === code && issue.field === field)) {
-      issues.push({ code, field, severity, messageKey: `orchestrator.builder.issue_${code}`, params: { name: draft.name.trim() } });
+      issues.push({ code, field, severity, messageKey: `orchestrator.builder.issue_${code}`, params: { name: draft.name.trim(), ...params } });
     }
   };
   if (!draft.name.trim()) add("name", "name");
@@ -39,13 +39,22 @@ export function checkAgentDraft(draft: AgentDraft, context: DraftContext): Draft
   if (draft.capabilityIds.some(id => !SAMPLE_CAPABILITIES.some(capability => capability.id === id))) add("capability_unknown", "capabilityIds");
   if (draft.readsOutsiders && capabilities.some(capability => capability.risk === "external" || capability.risk === "irreversible")) add("outsiders", "capabilityIds");
   if (capabilities.some(capability => capability.risk === "external") && !draft.approverIds.length) add("approvers", "approverIds");
+  const irreversible = capabilities.find(capability => capability.risk === "irreversible");
+  if (irreversible) {
+    if (!policy.allowIrreversibleActions) {
+      add("irreversible_policy", "capabilityIds", "error", { capability: irreversible.id });
+    } else {
+      const approvers = new Set(draft.approverIds.filter(id => SAMPLE_PEOPLE.some(person => person.id === id)));
+      if (approvers.size < 2) add("irreversible_approvers", "approverIds", "error", { capability: irreversible.id });
+    }
+  }
   if (draft.approverIds.some(id => !SAMPLE_PEOPLE.some(person => person.id === id))) add("approver_unknown", "approverIds");
   if (draft.memoryIds.some(id => !SAMPLE_MEMORY.some(namespace => namespace.id === id))) add("memory_unknown", "memoryIds");
   return issues;
 }
 
-export function draftIsValid(draft: AgentDraft, context: DraftContext): boolean {
-  return !checkAgentDraft(draft, context).some(issue => issue.severity === "error");
+export function draftIsValid(draft: AgentDraft, context: DraftContext, policy: Readonly<SamplePolicy> = SAMPLE_POLICY): boolean {
+  return !checkAgentDraft(draft, context, policy).some(issue => issue.severity === "error");
 }
 
 export function attachDraftSkill(draft: AgentDraft, skill: DraftSkill): { draft: AgentDraft; refusal: string | null } {

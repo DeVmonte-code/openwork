@@ -1,6 +1,6 @@
 import type { AgentDraft, DraftContext, DraftIssue } from "./agent-draft";
 import { checkAgentDraft } from "./agent-rules";
-import { SAMPLE_CAPABILITIES } from "./agent-samples";
+import { SAMPLE_CAPABILITIES, SAMPLE_POLICY, type SamplePolicy } from "./agent-samples";
 
 export type SimulationStep = {
   kind: "instructions" | "skill" | "memory" | "capability" | "approval" | "finish";
@@ -11,8 +11,8 @@ export type SimulationStep = {
 export type SampleSimulation = { status: "blocked" | "approval" | "complete"; steps: SimulationStep[]; issues: DraftIssue[] };
 
 // A fixed rehearsal, not an interpretation of the request. No I/O or model.
-export function simulateAgentDraft(draft: AgentDraft, context: DraftContext, example: string): SampleSimulation {
-  const issues = checkAgentDraft(draft, context);
+export function simulateAgentDraft(draft: AgentDraft, context: DraftContext, example: string, policy: Readonly<SamplePolicy> = SAMPLE_POLICY): SampleSimulation {
+  const issues = checkAgentDraft(draft, context, policy);
   const knownExample = draft.requests.some(request => request.examples.includes(example));
   if (issues.some(issue => issue.severity === "error") || !knownExample) return { status: "blocked", steps: [], issues };
   const steps: SimulationStep[] = [{ kind: "instructions", labelKey: "orchestrator.builder.sim_instructions", params: { count: draft.instructions.length } }];

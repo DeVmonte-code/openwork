@@ -229,3 +229,21 @@ test("locked preview keeps New agent visible with a lock and reason", async ({ p
   await expect(page.getByTestId("button-new-agent").locator("svg")).toHaveCount(1);
   await expect(page.getByText("Locked: ask an owner to add agents", { exact: true })).toBeVisible();
 });
+
+test("delete records is refused by sample policy in Preview and Configure and clears when removed", async ({ page }) => {
+  await openBuilder(page);
+  await validBasics(page);
+  await toggle(page, "ab-capability-delete").click();
+  await preview(page).click();
+  const message = "Delete records cannot be undone, and irreversible actions are turned off for this organization. Remove it or ask an owner to allow them.";
+  await expect(page.getByTestId("error-summary")).toContainText(message);
+  await configure(page).click();
+  await expect(page.locator("#ab-err-capabilityIds")).toContainText(message);
+  await expect(toggle(page, "ab-capability-delete")).toHaveAttribute("aria-invalid", "true");
+  await expect(toggle(page, "ab-capability-delete")).toHaveAttribute("aria-describedby", "ab-err-capabilityIds");
+  await toggle(page, "ab-capability-delete").click();
+  await expect(page.locator("#ab-err-capabilityIds")).toHaveCount(0);
+  await expect(toggle(page, "ab-capability-delete")).not.toHaveAttribute("aria-invalid", "true");
+  await preview(page).click();
+  await expect(page.getByTestId("error-summary")).toHaveCount(0);
+});

@@ -16,8 +16,11 @@ export const memoryLabel = (id: string) => labelOf(SAMPLE_MEMORY, id);
 export const capabilityLabel = (id: string) => labelOf(SAMPLE_CAPABILITIES, id);
 export const personLabel = (id: string) => labelOf(SAMPLE_PEOPLE, id);
 
-export const issueText = (issue: DraftIssue) =>
-  `${t(issue.messageKey, issue.params)} ${t(`${issue.messageKey}_action`, issue.params)}`;
+export const issueText = (issue: DraftIssue) => {
+  const params = typeof issue.params.capability === "string"
+    ? { ...issue.params, capability: capabilityLabel(issue.params.capability) } : issue.params;
+  return `${t(issue.messageKey, params)} ${t(`${issue.messageKey}_action`, params)}`;
+};
 
 export const errId = (field: string) => `ab-err-${field}`;
 

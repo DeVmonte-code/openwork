@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import { emptyAgentDraft, type AgentDraft, type DraftContext } from "./agent-draft";
 import { simulateAgentDraft } from "./agent-simulation";
+import { SAMPLE_POLICY } from "./agent-samples";
 
 const context: DraftContext = { agents: [{ id: "manager", name: "Manager", slug: "manager", active: true }] };
 const example = "Where is the handbook?";
@@ -35,9 +36,35 @@ test("simulation stops before sending outside and omits later capabilities", () 
   });
 });
 test("simulation stops before an irreversible capability", () => {
-  const result = simulateAgentDraft(draft({ capabilityIds: ["delete"] }), context, example);
+  const result = simulateAgentDraft(draft({ capabilityIds: ["delete"], approverIds: ["alex", "sam"] }), context, example,
+    { ...SAMPLE_POLICY, allowIrreversibleActions: true });
   expect(result.status).toBe("approval");
   expect(result.steps.at(-1)?.capabilityId).toBe("delete");
+});
+
+for (const scenario of [
+  { allowIrreversibleActions: false, approverIds: [], code: "irreversible_policy" },
+  { allowIrreversibleActions: false, approverIds: ["alex", "sam"], code: "irreversible_policy" },
+  { allowIrreversibleActions: true, approverIds: [], code: "irreversible_approvers" },
+  { allowIrreversibleActions: true, approverIds: ["alex"], code: "irreversible_approvers" },
+]) {
+  test(`deletion simulation is blocked with policy ${scenario.allowIrreversibleActions} and ${scenario.approverIds.length} approvers`, () => {
+    const current = draft({ capabilityIds: ["inbox", "delete"], approverIds: scenario.approverIds });
+    const before = JSON.stringify(current);
+    const result = simulateAgentDraft(current, context, example, { allowIrreversibleActions: scenario.allowIrreversibleActions });
+    expect(result.status).toBe("blocked");
+    expect(result.steps).toEqual([]);
+    expect(result.issues.map(issue => issue.code)).toEqual([scenario.code]);
+    expect(JSON.stringify(current)).toBe(before);
+  });
+}
+test("outsider readers remain blocked even when deletion is allowed with two approvers", () => {
+  const result = simulateAgentDraft(draft({
+    readsOutsiders: true, capabilityIds: ["delete"], approverIds: ["alex", "sam"],
+  }), context, example, { allowIrreversibleActions: true });
+  expect(result.status).toBe("blocked");
+  expect(result.steps).toEqual([]);
+  expect(result.issues.map(issue => issue.code)).toEqual(["outsiders"]);
 });
 test("invalid drafts are blocked without simulated steps", () => {
   const result = simulateAgentDraft(draft({ name: "", readsOutsiders: true, capabilityIds: ["reply"] }), context, example);

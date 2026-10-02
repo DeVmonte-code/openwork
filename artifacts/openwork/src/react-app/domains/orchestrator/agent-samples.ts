@@ -1,6 +1,8 @@
 import type { RiskTier, RolePreset } from "./agent-draft";
 
 export const ROLE_PRESETS: readonly RolePreset[] = ["dispatcher", "worker", "reviewer", "executor", "monitor", "manager"];
+export type SamplePolicy = { allowIrreversibleActions: boolean };
+export const SAMPLE_POLICY: Readonly<SamplePolicy> = { allowIrreversibleActions: false };
 export const SAMPLE_SKILLS = [
   { id: "triage", version: "1.2", labelKey: "orchestrator.builder.skill_triage" },
   { id: "review", version: "1.0", labelKey: "orchestrator.builder.skill_review" },

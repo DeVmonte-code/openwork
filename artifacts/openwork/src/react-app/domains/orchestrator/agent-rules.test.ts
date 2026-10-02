@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { agentSlug, emptyAgentDraft, type AgentDraft, type DraftContext, type DraftRequest } from "./agent-draft";
 import { addDraftRequest, attachDraftSkill, checkAgentDraft, draftIsValid } from "./agent-rules";
+import { SAMPLE_POLICY } from "./agent-samples";
 
 const context: DraftContext = { agents: [
   { id: "sender", name: "Sender", slug: "sender", active: true },
@@ -141,4 +142,46 @@ describe("agent draft rules", () => {
     checkAgentDraft(draft, context);
     expect(JSON.stringify({ draft, context })).toBe(before);
   });
+});
+
+describe("irreversible-action sample policy", () => {
+  for (const approverIds of [[], ["alex", "sam"]]) {
+    test(`default policy refuses deletion with ${approverIds.length} approvers`, () => {
+      expect(SAMPLE_POLICY.allowIrreversibleActions).toBe(false);
+      const current = valid({ capabilityIds: ["delete"], approverIds });
+      const issues = checkAgentDraft(current, context);
+      expect(issues).toEqual([{
+        code: "irreversible_policy", field: "capabilityIds", severity: "error",
+        messageKey: "orchestrator.builder.issue_irreversible_policy",
+        params: { name: current.name, capability: "delete" },
+      }]);
+      expect(draftIsValid(current, context)).toBe(false);
+    });
+  }
+  for (const approverIds of [[], ["alex"], ["alex", "sam"]]) {
+    test(`enabled policy checks deletion with ${approverIds.length} approvers`, () => {
+      const policy = { ...SAMPLE_POLICY, allowIrreversibleActions: true };
+      const current = valid({ capabilityIds: ["delete"], approverIds });
+      const issues = checkAgentDraft(current, context, policy);
+      if (approverIds.length < 2) {
+        expect(issues).toEqual([{
+          code: "irreversible_approvers", field: "approverIds", severity: "error",
+          messageKey: "orchestrator.builder.issue_irreversible_approvers",
+          params: { name: current.name, capability: "delete" },
+        }]);
+      } else expect(issues).toEqual([]);
+      expect(draftIsValid(current, context, policy)).toBe(approverIds.length === 2);
+      expect(SAMPLE_POLICY.allowIrreversibleActions).toBe(false);
+    });
+  }
+  for (const allowIrreversibleActions of [false, true]) {
+    test(`outsider refusal stays alongside the irreversible error when policy is ${allowIrreversibleActions}`, () => {
+      const current = valid({ readsOutsiders: true, capabilityIds: ["delete"], approverIds: ["alex"] });
+      const issues = checkAgentDraft(current, context, { allowIrreversibleActions });
+      expect(issues.map(issue => issue.code)).toEqual([
+        "outsiders", allowIrreversibleActions ? "irreversible_approvers" : "irreversible_policy",
+      ]);
+      expect(issues.every(issue => issue.severity === "error")).toBe(true);
+    });
+  }
 });
