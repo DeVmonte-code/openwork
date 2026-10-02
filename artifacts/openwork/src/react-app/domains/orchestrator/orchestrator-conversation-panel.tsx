@@ -10,6 +10,7 @@ import { ApprovalCard } from "./orchestrator-approval-card";
 import {
   CONVERSATION_STARTERS,
   sampleConversationReply,
+  type ConversationInput,
   type ConversationSubject,
 } from "./orchestrator-conversation";
 import "./orchestrator-conversation-panel.css";
@@ -56,8 +57,8 @@ export function ConversationPanel({
   }, [open]);
   useEffect(() => { endRef.current?.scrollIntoView?.({ block: "end" }); }, [messages, pending]);
 
-  const send = (raw: string) => {
-    const text = raw.trim();
+  const send = (request: ConversationInput) => {
+    const text = request.kind === "starter" ? request.label : request.text.trim();
     if (!text || pending) return;
     const id = nextId.current++;
     setMessages((m) => [...m, { id, role: "user", text }]);
@@ -66,7 +67,7 @@ export function ConversationPanel({
     clearTimer();
     timer.current = window.setTimeout(() => {
       timer.current = null;
-      const reply = sampleConversationReply(subject, orchestratorPreview.getSnapshot(), text, limited);
+      const reply = sampleConversationReply(subject, orchestratorPreview.getSnapshot(), request, limited);
       setMessages((m) => [...m, {
         id: nextId.current++,
         role: "agent",
@@ -151,14 +152,14 @@ export function ConversationPanel({
           </details>
           <div className="flex flex-wrap gap-1.5">
             {CONVERSATION_STARTERS.map((s) => (
-              <Button key={s.id} variant="outline" size="xs" disabled={pending} onClick={() => send(s.text)}>
+              <Button key={s.id} variant="outline" size="xs" disabled={pending} onClick={() => send({ kind: "starter", id: s.id, label: t(s.labelKey) })}>
                 {t(s.labelKey)}
               </Button>
             ))}
           </div>
           <form
             className="flex items-end gap-2"
-            onSubmit={(e) => { e.preventDefault(); send(draft); }}
+            onSubmit={(e) => { e.preventDefault(); send({ kind: "text", text: draft }); }}
           >
             <Textarea
               ref={inputRef}
@@ -170,7 +171,7 @@ export function ConversationPanel({
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
                   e.preventDefault();
-                  send(draft);
+                  send({ kind: "text", text: draft });
                 }
               }}
             />

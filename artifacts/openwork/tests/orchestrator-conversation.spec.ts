@@ -66,7 +66,7 @@ test("typed approve and other text use the fallback without resolving anything, 
   await input(page).fill("approve");
   await input(page).press("Enter");
   await expect(input(page)).toHaveValue("");
-  const fallback = "In this preview, I can answer the three starter questions. Real answers need the service connected. Typing “approve” does not approve anything; use the approval card’s buttons.";
+  const fallback = "In this preview, use the three starter buttons for sample answers. Real answers need the service connected. Typing “approve” does not approve anything; use the approval card’s buttons.";
   await expect(panel(page).getByRole("log")).toContainText(fallback);
   expect(await sampleState(page)).toEqual(before);
   await input(page).fill("Hello");
@@ -183,4 +183,39 @@ test("limited conversation shows title and state only and offers no approval cap
   await page.keyboard.press("Escape");
   await expect(page.getByTestId("approval-card").getByRole("button", { name: "Approve and send", exact: true })).toBeDisabled();
   await expect(page.getByTestId("approval-card")).toContainText("Locked");
+});
+
+test("localized starter labels appear in the thread while identifiers select all three replies", async ({ page }, info) => {
+  // Supply translated resource values only in this isolated browser fixture.
+  // Use the real translator without changing locale preferences or writing storage.
+  const starters = [
+    { english: "What are you waiting for?", label: "何を待っていますか？", reply: "I’m waiting for you to approve sending the drafted reply" },
+    { english: "What will you send?", label: "¿Qué vas a enviar?", reply: "I would send the drafted reply to 1 recipient" },
+    { english: "Why does this need my approval?", label: "Pourquoi cela nécessite-t-il mon approbation ?", reply: "That is why I need your approval." },
+  ];
+  await page.route("**/src/i18n/locales/en.ts*", async route => {
+    const response = await route.fetch();
+    let body = await response.text();
+    for (const starter of starters) {
+      body = body.replace(JSON.stringify(starter.english), JSON.stringify(starter.label));
+    }
+    await route.fulfill({ response, body });
+  });
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Needs you", exact: true })).toBeVisible();
+  const before = await sampleState(page);
+  await openSender(page);
+  const log = panel(page).getByRole("log");
+  for (const starter of starters) {
+    await panel(page).getByRole("button", { name: starter.label, exact: true }).click();
+    await expect(log.getByText(starter.label, { exact: true })).toBeVisible();
+    await expect(log).toContainText(starter.reply);
+  }
+  await expect(log.getByTestId("approval-card")).toHaveCount(1);
+  await input(page).fill("What are you waiting for?");
+  await input(page).press("Enter");
+  await expect(log).toContainText("use the three starter buttons for sample answers");
+  await expect(log.getByTestId("approval-card")).toHaveCount(1);
+  expect(await sampleState(page)).toEqual(before);
+  await page.screenshot({ path: info.outputPath("conversation-localized-starters.png") });
 });

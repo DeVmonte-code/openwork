@@ -2491,7 +2491,7 @@ export default {
   "orchestrator.conversation.waiting_paused": "In this sample, I’m paused and not doing any work.",
   "orchestrator.conversation.send_other": "In this sample, I have nothing to send outside the organization.",
   "orchestrator.conversation.approval_other": "In this sample, I have no action waiting for approval.",
-  "orchestrator.conversation.fallback": "In this preview, I can answer the three starter questions. Real answers need the service connected. Typing “approve” does not approve anything; use the approval card’s buttons.",
+  "orchestrator.conversation.fallback": "In this preview, use the three starter buttons for sample answers. Real answers need the service connected. Typing “approve” does not approve anything; use the approval card’s buttons.",
   "orchestrator.conversation.limited": "{title} is {state}.",
   "orchestrator.conversation.status_draft": "{agent} is looking at the draft",
   "orchestrator.conversation.status_sample": "Sample conversation",

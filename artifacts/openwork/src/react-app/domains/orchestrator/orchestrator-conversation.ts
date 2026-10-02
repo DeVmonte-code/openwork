@@ -5,11 +5,14 @@ export type ConversationSubject = DiscussionSummary & {
   agentId: AgentId;
   source: "approval" | "question" | "outsideQuestion" | "agent";
 };
-type StarterId = "waiting" | "send" | "approval";
-export const CONVERSATION_STARTERS: readonly { id: StarterId; labelKey: string; text: string }[] = [
-  { id: "waiting", labelKey: "orchestrator.conversation.starter_waiting", text: "What are you waiting for?" },
-  { id: "send", labelKey: "orchestrator.conversation.starter_send", text: "What will you send?" },
-  { id: "approval", labelKey: "orchestrator.conversation.starter_approval", text: "Why does this need my approval?" },
+export type StarterId = "waiting" | "send" | "approval";
+export type ConversationInput =
+  | { kind: "starter"; id: StarterId; label: string }
+  | { kind: "text"; text: string };
+export const CONVERSATION_STARTERS: readonly { id: StarterId; labelKey: string }[] = [
+  { id: "waiting", labelKey: "orchestrator.conversation.starter_waiting" },
+  { id: "send", labelKey: "orchestrator.conversation.starter_send" },
+  { id: "approval", labelKey: "orchestrator.conversation.starter_approval" },
 ];
 export type SampleConversationReply = {
   messageKey: string;
@@ -24,7 +27,7 @@ const key = (name: string) => `orchestrator.conversation.${name}`;
 export function sampleConversationReply(
   subject: ConversationSubject,
   snapshot: ConversationSnapshot,
-  message: string,
+  input: ConversationInput,
   limited = false,
 ): SampleConversationReply {
   if (limited) {
@@ -38,13 +41,12 @@ export function sampleConversationReply(
   const params = { agent: subject.agent, action: subject.action, title: subject.title, state: subject.state };
   const paused = snapshot.agents[subject.agentId] === "paused";
   const statusKey = key(paused ? "status_paused" : "status_draft");
-  const starter = CONVERSATION_STARTERS.find(candidate => candidate.text.toLowerCase() === message.trim().toLowerCase());
-  if (!starter) return { messageKey: key("fallback"), params, statusKey, includeApproval: false };
+  if (input.kind === "text") return { messageKey: key("fallback"), params, statusKey, includeApproval: false };
   const sender = subject.agentId === "sender";
-  if (starter.id === "send") {
+  if (input.id === "send") {
     return { messageKey: key(sender ? "send_sender" : "send_other"), params, statusKey, includeApproval: false };
   }
-  if (starter.id === "approval") {
+  if (input.id === "approval") {
     return { messageKey: key(sender ? "approval_sender" : "approval_other"), params, statusKey, includeApproval: false };
   }
   if (sender) {
