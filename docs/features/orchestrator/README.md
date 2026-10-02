@@ -126,7 +126,8 @@ stored data for loops or two managers, and it keeps its levels as plain numbers.
 | Agent | A named, configured actor with an owner, versioned configuration, and a lifecycle state |
 | Agent version | One immutable, validated snapshot of an agent's configuration |
 | Agent Card | An agent's listing in the A2A protocol: name, description, skills, how to reach it and how to authenticate. Generated from the active configuration |
-| A2A skill ("Request it handles") | One thing an agent can be asked to do, tied to a task type it accepts. Not the same as a Library skill |
+| A2A skill ("Request it handles") | One thing an agent can be asked to do, tied to a task type it accepts. Not the same as an attached skill |
+| Attached skill | A skill (instructions, never a tool) attached to an agent from the organization's marketplaces or the gateway's built-in skills. Pinned by content digest. A skill that lives only on one person's computer cannot be attached |
 | Remote agent | An A2A agent outside the organization that an administrator has registered |
 | Task | A durable unit of work in the queue. Triggers, schedules and delegation all produce tasks; agents only ever process tasks |
 | Process | A root task plus every task descended from it. It shares one correlation id, one budget and one set of loop limits. The product already uses "Workflow" for Code Mode scripts, so this plan avoids that word |

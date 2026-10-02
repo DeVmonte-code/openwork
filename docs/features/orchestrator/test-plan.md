@@ -52,7 +52,8 @@ change: a retry creates a new task that references the old one (D15).
 | C5 | Activate while attempts run | In-flight attempts finish on their version; the next claim uses the new one; the timeline shows both |
 | C6 | Stale `baseVersion` | `409 version_conflict`; nothing overwritten |
 | C7 | Second activator required | The last editor cannot activate an external-write agent |
-| C8 | The six sample configs | All validate; each referenced delegate exists; exactly one holds an external-write tool |
+| C8 | The seven sample configs | All validate; each referenced delegate exists; exactly one holds an external-write tool |
+| C9 | Attached skills | The same skill twice, a digest that is not a hash, a skill from one person's computer and a twenty-first skill are rejected; an attached skill can be switched off and keeps its pin; editing a skill after attachment changes nothing until a new version is saved, and the version diff shows the digest change |
 
 ## R: resilience
 

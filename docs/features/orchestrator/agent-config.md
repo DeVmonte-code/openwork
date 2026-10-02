@@ -27,7 +27,7 @@ Status: proposal. Part of [the orchestrator plan](README.md). Covers brief step 
 | --- | --- | --- |
 | Identity | `identity` | `slug` is unique per organization and is how other agents address this one |
 | Role and responsibilities | `role` | `kind` (including `manager`), up to 10 `responsibilities`, `decisionAuthority` (plain sentences on what the agent may decide alone), and the task types the agent `accepts` and `produces` |
-| Instructions or system prompt | `instructions` | Encrypted at rest. Guardrails are extra lines appended to every attempt |
+| Instructions or system prompt | `instructions` | Encrypted at rest. Guardrails are extra lines appended to every attempt. `skills` attaches organization or built-in skills, which are instructions and never tools; each is pinned by the digest of its content, so a later edit to the skill changes nothing until a new version is saved |
 | Model | `model` | A primary and up to two fallbacks, tried in order after `model_failure` |
 | Tool access | `tools` | Allow and deny lists of catalogue capabilities, and which orchestrator tools the agent gets |
 | Discovery and the requests it handles | `a2a` | `skills` become the skills on the agent's Agent Card, each tied to a task type in `role.accepts`, with example requests; `exposure` (`internal`, `members` or `organization`) says who can find and use it. See [a2a.md](a2a.md) |
@@ -194,6 +194,19 @@ export const agentConfigV1Schema = z.strictObject({
   instructions: z.strictObject({
     system: z.string().trim().min(1).max(32_000),
     guardrails: z.array(z.string().trim().min(1).max(500)).max(20).default([]),
+    /**
+     * Skills attached to this agent: instructions it can read, never tools. Tool access stays in
+     * `tools.allow`. Each is pinned by the digest of its content when attached, so editing a skill
+     * cannot silently change a running agent; picking up an edit means a new version.
+     */
+    skills: z.array(z.strictObject({
+      skillId: z.string().regex(/^[a-z][a-z0-9_.-]{0,62}$/),
+      /** `organization`: from the organization's marketplaces. `builtin`: shipped with the gateway. A skill on one person's computer cannot be attached. */
+      source: z.enum(["organization", "builtin"]),
+      contentDigest: z.string().regex(/^[0-9a-f]{64}$/),
+      /** Off keeps the attachment and its pin but does not give the skill to the agent. */
+      enabled: z.boolean().default(true),
+    })).max(20).default([]),
   }),
 
   model: z.strictObject({
@@ -390,6 +403,13 @@ export const agentConfigV1Schema = z.strictObject({
     } else if (!acceptedTypes.has(trigger.createsTaskType)) {
       issue(["triggers", index, "createsTaskType"], `Task type ${trigger.createsTaskType} is not in role.accepts`)
     }
+  })
+
+  const attachedSkills = new Set<string>()
+  config.instructions.skills.forEach((skill, index) => {
+    const key = `${skill.source}:${skill.skillId}`
+    if (attachedSkills.has(key)) issue(["instructions", "skills", index, "skillId"], `Skill ${skill.skillId} is attached twice`)
+    attachedSkills.add(key)
   })
 
   const skillIds = new Set<string>()

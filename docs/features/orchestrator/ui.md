@@ -276,12 +276,36 @@ tooltips in place of state, and plain words.
 | --- | --- |
 | Name, icon, one-line description | Basics. The description is what other agents and people see on the agent's card |
 | Instructions, with "Suggest improvements" | Instructions. Assisted rewriting is a later addition; v1 is a plain text field with a character count |
-| Skills | Two different things. **Skills**: the Library skills attached to this agent. **Requests it handles**: what others can ask it, which become the skills on its Agent Card, each with example requests |
+| Skills | Two different things. **Skills**: organization or built-in skills attached to this agent (`instructions.skills`), each with an on/off switch and a note that it is pinned to the version shown; a skill on one person's computer is not offered. **Requests it handles**: what others can ask it, which become the skills on its Agent Card, each with example requests |
 | Knowledge, with work content toggles | **What it can read**: organization memory namespaces and connected sources it may use; each is a visible row with its data class |
 | Suggested prompts (title and message) | **Example requests**, shared with the card's skill examples, shown on the agent page as one-click starters |
 | Configure and Preview | The same two tabs. **Preview** runs the configuration against a sample request with mock tools (the V4 simulation), so a draft can be tried before activation |
 
 "Create" becomes **Save draft**, then **Activate version N**, as described above.
+
+### The builder, item by item
+
+The request for an agent builder, with where each item lives in this plan. "Preview" means the
+Replit workspace can show it with sample data; nothing in it is backed by a service yet.
+
+| The request | Where it is specified | In the preview |
+| --- | --- | --- |
+| Create a new agent from the UI | "New agent" starts from a role preset; `POST /v1/orchestrator-agents` ([api.md](api.md)) | To build |
+| Edit and reconfigure an existing agent | Every save is a new draft version; validate; activate; roll back ([agent-config.md](agent-config.md)) | To build |
+| Custom instructions | `instructions.system` and guardrails | To build |
+| Skills added, removed, configured | `instructions.skills`: attach, switch off, remove; pinned by digest | To build |
+| Knowledge sources | `memory.orgNamespaces` and the connected sources the agent may read, shown as rows with their data class | To build |
+| Cloud files, web search, connectors on and off | `tools.allow`: each catalogue capability is a switch with its risk tier; reading and writing are separate rows | To build |
+| Attachments | Documents added as organization memory in a namespace the agent is granted (members can write organization memory directly), with the member as provenance and a data class ([memory.md](memory.md)). A per-agent upload is a later addition | To build |
+| Suggested prompts | Example requests on each request the agent handles | To build |
+| Save and update | Save draft; the version list shows who changed what | To build |
+| Preview before publishing | **Preview** tab: the V4 simulation with mock tools | To build |
+| Publish | **Activate version N**; Draft and Published are a draft version and the active version | To build |
+| Appears in the catalogue | The Agents view and the Agent Card; `members` or `organization` exposure makes it visible to members' chats ([workspaces-and-chat.md](workspaces-and-chat.md)) | To build |
+| Delete or archive | **Retire**, which keeps history; nothing is hard-deleted | To build |
+| Permissions and access control | `orchestrator.configure` to create and save, `orchestrator.activate` to publish, second activator for external-write agents ([governance.md](governance.md)) | Lock states |
+| Versioning, approval and publishing controls | Immutable versions, activation rules, ledger | To build |
+
 The list that results is the Agents view, and each row can show the agent's card in
 Technical details.
 

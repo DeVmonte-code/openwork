@@ -71,6 +71,17 @@ states they could have run from.
 }
 ```
 
+## Builder options
+
+One read that fills the pickers in the agent builder, so the interface never guesses.
+
+| Method and path | Purpose | Permission |
+| --- | --- | --- |
+| `GET /v1/orchestrator-agent-options` | What this member can put in a configuration: tool capabilities from the catalogue (id, name, connection, effective tier, data class, and whether the owner has been granted it), attachable skills (id, source, name, current content digest), organization memory namespaces, models the owner may use, and members and roles that can be named as approvers | `configure` |
+
+Nothing here grants anything. Validation (V2 and V3) re-checks every reference at save and
+at activation, so a stale picker cannot produce an invalid or over-privileged version.
+
 ## Versions
 
 | Method and path | Purpose | Permission |

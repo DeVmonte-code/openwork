@@ -131,7 +131,7 @@ Orchestrator tab shows.
 
 **A naming trap.** In OpenWork, "skills" already means installable instruction packs
 in the Library. In the product, A2A skills are called **Requests it handles**, and
-Library skills stay "Skills". The code and the configuration keep the A2A word
+skills attached to an agent (`instructions.skills`) stay "Skills". The code and the configuration keep the A2A word
 because that is what the protocol calls them.
 
 Generated for the research agent (version 3):
