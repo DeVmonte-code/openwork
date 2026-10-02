@@ -285,25 +285,25 @@ tooltips in place of state, and plain words.
 
 ### The builder, item by item
 
-The request for an agent builder, with where each item lives in this plan. "Preview" means the
-Replit workspace can show it with sample data; nothing in it is backed by a service yet.
+The request for an agent builder, with where each item lives in this plan. "In the preview" says what the Replit workspace builder (New agent, with Configure and Preview tabs) shows with
+sample data. Nothing in it is backed by a service: it creates, saves and activates nothing.
 
 | The request | Where it is specified | In the preview |
 | --- | --- | --- |
-| Create a new agent from the UI | "New agent" starts from a role preset; `POST /v1/orchestrator-agents` ([api.md](api.md)) | To build |
+| Create a new agent from the UI | "New agent" starts from a role preset; `POST /v1/orchestrator-agents` ([api.md](api.md)) | Form only: nothing is created |
 | Edit and reconfigure an existing agent | Every save is a new draft version; validate; activate; roll back ([agent-config.md](agent-config.md)) | To build |
-| Custom instructions | `instructions.system` and guardrails | To build |
-| Skills added, removed, configured | `instructions.skills`: attach, switch off, remove; pinned by digest | To build |
-| Knowledge sources | `memory.orgNamespaces` and the connected sources the agent may read, shown as rows with their data class | To build |
-| Cloud files, web search, connectors on and off | `tools.allow`: each catalogue capability is a switch with its risk tier; reading and writing are separate rows | To build |
+| Custom instructions | `instructions.system` and guardrails | Built |
+| Skills added, removed, configured | `instructions.skills`: attach, switch off, remove; pinned by digest | Built (pinned by version label, not digest) |
+| Knowledge sources | `memory.orgNamespaces` and the connected sources the agent may read, shown as rows with their data class | Built (organization memory rows with data class) |
+| Cloud files, web search, connectors on and off | `tools.allow`: each catalogue capability is a switch with its risk tier; reading and writing are separate rows | Built (switches with risk tier) |
 | Attachments | Documents added as organization memory in a namespace the agent is granted (members can write organization memory directly), with the member as provenance and a data class ([memory.md](memory.md)). A per-agent upload is a later addition | To build |
-| Suggested prompts | Example requests on each request the agent handles | To build |
-| Save and update | Save draft; the version list shows who changed what | To build |
-| Preview before publishing | **Preview** tab: the V4 simulation with mock tools | To build |
-| Publish | **Activate version N**; Draft and Published are a draft version and the active version | To build |
+| Suggested prompts | Example requests on each request the agent handles | Built (example requests) |
+| Save and update | Save draft; the version list shows who changed what | Not offered: the preview saves nothing |
+| Preview before publishing | **Preview** tab: the V4 simulation with mock tools | Built (labeled sample simulation, no model call) |
+| Publish | **Activate version N**; Draft and Published are a draft version and the active version | Locked button with the reason |
 | Appears in the catalogue | The Agents view and the Agent Card; `members` or `organization` exposure makes it visible to members' chats ([workspaces-and-chat.md](workspaces-and-chat.md)) | To build |
 | Delete or archive | **Retire**, which keeps history; nothing is hard-deleted | To build |
-| Permissions and access control | `orchestrator.configure` to create and save, `orchestrator.activate` to publish, second activator for external-write agents ([governance.md](governance.md)) | Lock states |
+| Permissions and access control | `orchestrator.configure` to create and save, `orchestrator.activate` to publish, second activator for external-write agents ([governance.md](governance.md)) | Locked Activate only |
 | Versioning, approval and publishing controls | Immutable versions, activation rules, ledger | To build |
 
 The list that results is the Agents view, and each row can show the agent's card in
