@@ -20,3 +20,9 @@ Read opener metadata before opening a modal dialog, not through background role 
 **Why:** Base UI hides the background page from the accessibility tree. Playwright's default role locators consequently stop resolving background buttons, even when the buttons remain in the DOM, causing misleading timeouts.
 
 **How to apply:** Capture an opener's label before activating it. Query controls inside the dialog while it is open, and wait for the dialog to close before asserting background focus or interacting with the page again.
+
+If Playwright's default `localhost:80` origin returns 502 while the managed Vite workflow is healthy, use the workflow's assigned port as `PLAYWRIGHT_BASE_URL` for that run.
+
+**Why:** The preview proxy can fail independently of the running dev server; in this workspace, the direct Vite origin worked and the proxy did not.
+
+**How to apply:** Check the workflow's open port before restarting or changing code. Retry the isolated browser test against `http://localhost:<assigned-port>` and keep its existing module-resolution safeguards.
