@@ -5,3 +5,4 @@
 - [Windows cleanup risk](windows-cleanup-risk.md) — dead-parent PID tree termination is not reliable ownership of surviving native helpers.
 - [Local platform goals](local-platform-goals.md) — the owner runs this app on a Mac; distinguish cross-platform package resolution from actual native execution.
 - [Sample irreversible-action policy](sample-irreversible-policy.md) — irreversible actions default off; permitted actions require two approvers and remain forbidden for outsider readers.
+- [pnpm lifecycle identity](pnpm-lifecycle-identity.md) — fresh pnpm 11 installs may lack the versioned user-agent; no-op installs do not exercise the policy hook.

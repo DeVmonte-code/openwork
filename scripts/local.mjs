@@ -3,7 +3,8 @@ import { access } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { setTimeout as delay } from "node:timers/promises";
-import { choosePort, localEnvironments, portAvailable, portRequest } from "./local-config.mjs";
+import { checkLocalServer, choosePort, localEnvironments, localServerSettings, portAvailable, portRequest, redactTokens, serverBanner } from "./local-config.mjs";
+import { tokenSafeOutput } from "./local-output.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const apiDir = path.join(root, "artifacts", "api-server");
@@ -15,13 +16,19 @@ let stopping = false;
 let ready = false;
 let shutdownPromise;
 let windowsJob;
+let outputTokens = [];
 
 async function launch(label, args, cwd, env) {
   const childArgs = windows ? [path.join(root, "scripts", "local-child.mjs"), ...args] : args;
   const child = spawn(process.execPath, childArgs, {
-    cwd, env, stdio: windows ? ["inherit", "inherit", "inherit", "ipc"] : "inherit",
+    cwd, env, stdio: windows ? ["inherit", "pipe", "pipe", "ipc"] : ["inherit", "pipe", "pipe"],
     detached: !windows, windowsHide: true,
   });
+  for (const [stream, target] of [[child.stdout, process.stdout], [child.stderr, process.stderr]]) {
+    const output = tokenSafeOutput(text => target.write(text), outputTokens);
+    stream.on("data", output.data);
+    stream.on("end", output.end);
+  }
   children.add(child);
   child.on("error", (error) => {
     if (!stopping) void shutdown(1, `${label} failed to start: ${error.message}`);
@@ -68,7 +75,7 @@ function shutdown(code, message) {
   if (shutdownPromise) return shutdownPromise;
   stopping = true;
   abort.abort();
-  if (message) console.error(`[local] ${message}`);
+  if (message) console.error(`[local] ${redactTokens(message, outputTokens)}`);
   console.log("[local] Stopping both servers...");
   shutdownPromise = (async () => {
     const active = [...children];
@@ -123,6 +130,8 @@ async function waitForHealth(url, label) {
 }
 
 async function main() {
+  const server = localServerSettings(process.env);
+  outputTokens = server?.secrets ?? [];
   const vite = path.join(webDir, "node_modules", "vite", "bin", "vite.js");
   try {
     await access(vite);
@@ -139,7 +148,7 @@ async function main() {
   ]) {
     console.log(`[local] ${label} port: ${chosen}${chosen !== request.port ? ` (default ${request.port} unavailable; using next free port)` : ""}`);
   }
-  const env = localEnvironments(process.env, webPort, apiPort);
+  const env = localEnvironments(process.env, webPort, apiPort, server);
   if (windows) {
     const { createWindowsJob } = await import("./local-windows-job.mjs");
     windowsJob = await createWindowsJob({
@@ -154,11 +163,15 @@ async function main() {
   supervise(api, "API");
   await waitForHealth(`http://127.0.0.1:${apiPort}/api/healthz`, "API");
   if (stopping) return;
+  const warning = await checkLocalServer(server);
+  if (warning) console.warn(`[local] ${warning}`);
+  if (stopping) return;
   const web = await launch("Web", [vite, "--config", path.join(webDir, "vite.config.ts"), "--host", "127.0.0.1"], webDir, env.web);
   supervise(web, "Web");
   const address = `http://127.0.0.1:${webPort}`;
   await waitForHealth(`${address}/api/healthz`, "Web /api proxy");
   ready = true;
+  if (server) console.log(`[local] ${serverBanner(server)}`);
   console.log(`\n[local] Ready\n[local] Web:          ${address}/\n[local] Orchestrator: ${address}/orchestrator\n[local] Hierarchy:    ${address}/orchestrator/hierarchy\n[local] API:          http://127.0.0.1:${apiPort} (/api/healthz)\n[local] Complete hosted sign-in, then paste the code into OpenWork.\n[local] Ctrl+C stops both servers.\n`);
 }
 

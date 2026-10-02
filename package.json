@@ -4,7 +4,8 @@
   "license": "MIT",
   "scripts": {
     "local": "node scripts/local.mjs",
-    "test:local": "node --test scripts/local-config.test.mjs scripts/local-proxy.test.mjs scripts/local-windows-job.test.mjs scripts/local-native.test.mjs scripts/preinstall.test.mjs",
+    "test:local": "node --test scripts/local-config.test.mjs scripts/local-server.test.mjs scripts/build-approvals.test.mjs scripts/local-proxy.test.mjs scripts/local-windows-job.test.mjs scripts/local-native.test.mjs scripts/preinstall.test.mjs",
+    "test:build-approvals": "node scripts/build-approvals.mjs",
     "test:local:processes": "node --test scripts/local-runtime.test.mjs",
     "preinstall": "node scripts/preinstall.mjs",
     "build": "pnpm run typecheck && pnpm -r --if-present run build",

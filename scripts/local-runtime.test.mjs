@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { setTimeout as delay } from "node:timers/promises";
 import { promisify } from "node:util";
 import { readFile } from "node:fs/promises";
+import http from "node:http";
 import { test } from "node:test";
 import { portAvailable } from "./local-config.mjs";
 
@@ -216,4 +217,64 @@ test("API without HOST keeps the all-interface Replit default", options, async (
     await poll(() => ended, "default API stopped");
   }
   assert.equal(await portAvailable(api), true);
+});
+
+test("short server settings reach only the web child, health is checked, and output never contains the token", options, async () => {
+  const { api, web, env } = await ports();
+  const token = "synthetic-process-client-token";
+  let probes = 0;
+  const server = http.createServer((request, response) => {
+    assert.equal(request.url, "/health");
+    assert.equal(request.headers.authorization, undefined);
+    probes += 1;
+    response.end('{"ok":true}');
+  });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  const url = `http://127.0.0.1:${server.address().port}`;
+  const runner = run({ ...env, OPENWORK_SERVER_URL: url, OPENWORK_SERVER_TOKEN: token, DEBUG: "vite:config" });
+  try {
+    await runner.ready();
+    const { stdout } = await exec("ps", ["-eo", "pid=,ppid="]);
+    const children = stdout.split("\n").map(line => line.trim().split(/\s+/).map(Number))
+      .filter(([, parent]) => parent === runner.child.pid).map(([pid]) => pid);
+    assert.equal(children.length, 2);
+    let webFound = false;
+    let apiFound = false;
+    for (const pid of children) {
+      const entries = (await readFile(`/proc/${pid}/environ`, "utf8")).split("\0");
+      if (entries.includes(`PORT=${web}`)) {
+        webFound = true;
+        assert.ok(entries.includes(`VITE_OPENWORK_URL=${url}/`));
+        assert.ok(entries.includes(`VITE_OPENWORK_TOKEN=${token}`));
+        assert.ok(entries.includes("VITE_OPENWORK_FORCE_ENV_SETTINGS=1"));
+      } else {
+        apiFound = true;
+        assert.ok(entries.includes(`PORT=${api}`));
+        assert.equal(entries.some(entry => /^(OPENWORK_SERVER_|VITE_OPENWORK_(URL|TOKEN|FORCE_ENV_SETTINGS)=)/.test(entry)), false);
+        assert.equal(entries.some(entry => entry.includes(token)), false);
+      }
+    }
+    assert.ok(webFound && apiFound);
+    assert.equal(probes, 1);
+    assert.ok(runner.output().includes(`Connected to your local OpenWork server at ${url}/`));
+    assert.equal(runner.output().includes(token), false);
+  } finally {
+    await runner.stop();
+    await new Promise(resolve => server.close(resolve));
+  }
+  assert.equal(runner.output().includes(token), false);
+  await assertReleased(api, web);
+});
+
+test("unavailable OpenWork server warns but the local runner still becomes ready", options, async () => {
+  const { api, web, env } = await ports();
+  const unavailable = await unusedPort([api, web]);
+  const token = "synthetic-unavailable-server-token";
+  const runner = run({ ...env, OPENWORK_SERVER_URL: `http://127.0.0.1:${unavailable}`, OPENWORK_SERVER_TOKEN: token });
+  try {
+    await runner.ready();
+    assert.match(runner.output(), /Warning: OpenWork server health did not answer.*Continuing/);
+    assert.equal(runner.output().includes(token), false);
+  } finally { await runner.stop(); }
+  await assertReleased(api, web);
 });

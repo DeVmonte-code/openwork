@@ -22,6 +22,27 @@ pnpm local
 
 `pnpm local` builds and starts the API directly with Node, waits for `/api/healthz`, then starts Vite. No Replit path router is needed: the local Vite server forwards `/api` to the API without rewriting paths or parsing bodies. The fixed Den upstream and sign-in rules remain unchanged. No database or session secret is needed for this API proxy.
 
+### Connect to an existing local OpenWork server
+
+Set `OPENWORK_SERVER_URL` and optionally `OPENWORK_SERVER_TOKEN` before `pnpm local`. For a server already running at `http://localhost:8787`, enter its client token without putting it in shell history:
+
+```sh
+export OPENWORK_SERVER_URL=http://localhost:8787
+printf 'OpenWork client token: '
+read -r -s OPENWORK_SERVER_TOKEN
+printf '\n'
+export OPENWORK_SERVER_TOKEN
+pnpm local
+```
+
+The runner passes these settings only to the web child as `VITE_OPENWORK_URL` and `VITE_OPENWORK_TOKEN`, with `VITE_OPENWORK_FORCE_ENV_SETTINGS=1` so old saved settings do not win. Explicit `VITE_OPENWORK_URL`, `VITE_OPENWORK_TOKEN`, and `VITE_OPENWORK_FORCE_ENV_SETTINGS` values take precedence individually. A token without a URL is an error. URLs must use http or https without embedded credentials.
+
+Only `localhost`, `127.0.0.1`, and `::1` are accepted without a deliberate `OPENWORK_ALLOW_REMOTE_SERVER=1` opt-in. **The client token is embedded in the page code**, not a server-side secret. The local web server binds only to this computer's loopback interface; anyone who can access that page on this computer can read the token. Do not expose it through a tunnel, forward the port, or use a privileged host token. A non-local OpenWork URL does not change this disclosure; opt in only if you understand it.
+
+Before starting Vite, the runner probes the OpenWork server's `/health` address with a two-second timeout and without sending the token. An unavailable server produces a warning but does not stop startup, since it may start later. The ready banner prints only `Connected to your local OpenWork server at <URL>`; tokens are not printed or written to configuration files, and child output is redacted.
+
+Build-script approvals are kept in both pnpm 10's `onlyBuiltDependencies` and pnpm 11's `allowBuilds`: exactly `@swc/core`, `esbuild`, `msw`, and `unrs-resolver`. `@scarf/scarf` is explicitly false: its install-time analytics script is not needed. Run `pnpm test:build-approvals` (also covered by `pnpm test:local`) to detect drift. Keep both settings when installing on the Mac with pnpm 11; Replit continues using pnpm 10.
+
 Both local servers listen only on **127.0.0.1**, not your network interfaces. The runner overrides inherited `HOST` values. The API also accepts an optional `HOST` for direct starts; with none set it keeps its existing all-interface behavior for Replit.
 
 Defaults are web port **5173** and API port **8788**. Occupied defaults advance to the next free port; the command prints the chosen ports and these addresses:

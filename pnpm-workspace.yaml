@@ -74,6 +74,15 @@ overrides:
   # orval pins js-yaml to an exact version older than the CVE fix (>=4.3.2)
   js-yaml: '4.3.2'
 
+onlyBuiltDependencies:
+  - '@swc/core'
+  - esbuild
+  - msw
+  - unrs-resolver
+
 allowBuilds:
-  '@scarf/scarf': true
+  '@swc/core': true
   esbuild: true
+  msw: true
+  unrs-resolver: true
+  '@scarf/scarf': false
