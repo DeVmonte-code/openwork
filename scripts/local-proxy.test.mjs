@@ -4,7 +4,8 @@ import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { test } from "node:test";
+import { afterEach, test } from "node:test";
+import { localEnvironments } from "./local-config.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const web = path.join(root, "artifacts", "openwork");
@@ -12,14 +13,53 @@ const { createServer: createVite, resolveConfig } = await import(
   pathToFileURL(path.join(web, "node_modules", "vite", "dist", "node", "index.js")).href
 );
 
+const originalEnv = {
+  PORT: process.env.PORT,
+  BASE_PATH: process.env.BASE_PATH,
+  NODE_ENV: process.env.NODE_ENV,
+  OPENWORK_LOCAL_API_URL: process.env.OPENWORK_LOCAL_API_URL,
+};
+afterEach(() => {
+  for (const [key, value] of Object.entries(originalEnv)) {
+    if (value === undefined) delete process.env[key];
+    else process.env[key] = value;
+  }
+});
+
 test("Vite has no API proxy unless the local address is provided", async () => {
   delete process.env.OPENWORK_LOCAL_API_URL;
   process.env.PORT = "5173";
   process.env.BASE_PATH = "/";
   const config = await resolveConfig({ configFile: path.join(web, "vite.config.ts") }, "serve");
   assert.equal(config.server.proxy, undefined);
+  assert.equal(config.plugins.some(plugin => plugin.name === "runtime-error-plugin"), true);
   assert.equal(config.define["import.meta.env.VITE_DEN_REQUIRE_SIGNIN"], '"1"');
   assert.equal(config.define["import.meta.env.VITE_OPENWORK_FORCE_MANUAL_AUTH"], JSON.stringify(process.env.VITE_OPENWORK_FORCE_MANUAL_AUTH ?? "1"));
+});
+
+test("local runner's resolved Vite config skips the runtime modal but keeps the compile overlay", async () => {
+  const { web: env } = localEnvironments({}, 5173, 8788);
+  process.env.PORT = env.PORT;
+  process.env.BASE_PATH = env.BASE_PATH;
+  process.env.OPENWORK_LOCAL_API_URL = env.OPENWORK_LOCAL_API_URL;
+  const config = await resolveConfig({ configFile: path.join(web, "vite.config.ts") }, "serve");
+  assert.equal(config.plugins.some(plugin => plugin.name === "runtime-error-plugin"), false);
+  assert.equal(config.server.proxy["/api"].target, env.OPENWORK_LOCAL_API_URL);
+  assert.notEqual(config.server.hmr, false);
+  assert.notEqual(config.server.hmr?.overlay, false);
+  assert.equal(config.plugins.some(plugin => plugin.name === "vite:client-inject"), true);
+});
+
+test("production keeps the runtime plugin registered with its existing serve-only behavior", async () => {
+  delete process.env.OPENWORK_LOCAL_API_URL;
+  process.env.PORT = "5173";
+  process.env.BASE_PATH = "/";
+  process.env.NODE_ENV = "production";
+  const serving = await resolveConfig({ configFile: path.join(web, "vite.config.ts") }, "serve", "production");
+  assert.equal(serving.plugins.some(plugin => plugin.name === "runtime-error-plugin"), true);
+  const config = await resolveConfig({ configFile: path.join(web, "vite.config.ts") }, "build", "production");
+  assert.equal(config.plugins.some(plugin => plugin.name === "runtime-error-plugin"), false);
+  assert.equal(config.server.proxy, undefined);
 });
 
 test("local Vite hop preserves raw bytes, encoded paths and streaming", async () => {
@@ -53,6 +93,7 @@ test("local Vite hop preserves raw bytes, encoded paths and streaming", async ()
       server: { host: "127.0.0.1", port: 0, hmr: false },
       optimizeDeps: { noDiscovery: true, include: [] },
     });
+    assert.equal(vite.config.plugins.some(plugin => plugin.name === "runtime-error-plugin"), false);
     await vite.listen();
     const base = `http://127.0.0.1:${vite.httpServer.address().port}`;
     const raw = Buffer.from([0, 255, 128, 32, 10, 123, 34, 125]);

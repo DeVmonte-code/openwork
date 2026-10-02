@@ -44,7 +44,9 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    runtimeErrorOverlay(),
+    // Local browsers may inject extension errors unrelated to the app.
+    // Keep Vite's own compile-error overlay; only skip the runtime modal.
+    ...(localApiUrl ? [] : [runtimeErrorOverlay()]),
     ...(process.env.NODE_ENV !== 'production' &&
     process.env.REPL_ID !== undefined
       ? [

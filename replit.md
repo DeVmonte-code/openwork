@@ -71,6 +71,8 @@ pnpm local
 
 Explicit port overrides fail with a message if occupied. Press **Ctrl+C** to stop both servers; either server exiting also stops the other. The Vite proxy is enabled only when `OPENWORK_LOCAL_API_URL` is set, which the runner supplies to its web child; do not set it for ordinary Replit workflows. `pnpm test:local` checks port/environment policy, raw/streaming proxy behavior, native lockfile coverage, and the portable pnpm-only preinstall hook.
 
+Browser extensions such as wallet extensions can inject errors; these are ignored by the runtime modal in local runs (the modal is disabled), and a private window without extensions also avoids them.
+
 `pnpm test:local:processes` additionally checks real server startup, occupied defaults, interrupts, startup failure, peer termination, both local kernel listeners being loopback-only, and the API's unchanged default wildcard listener on Linux; it skips on other operating systems.
 
 Known limits:
