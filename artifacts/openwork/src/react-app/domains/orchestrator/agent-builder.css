@@ -1,0 +1,9 @@
+@media (prefers-reduced-motion: reduce) {
+  [data-agent-builder] *,
+  [data-agent-builder] *::before,
+  [data-agent-builder] *::after {
+    animation: none !important;
+    transition-duration: 0s !important;
+    scroll-behavior: auto !important;
+  }
+}

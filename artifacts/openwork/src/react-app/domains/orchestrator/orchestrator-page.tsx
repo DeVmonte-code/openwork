@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/sonner";
 import { t } from "@/i18n";
+import { AgentBuilder } from "./agent-builder";
 import { HierarchyView } from "./hierarchy-view";
 import { orchestratorPreview, useOrchestratorPreview, type AgentId } from "./orchestrator-preview";
 import {
@@ -127,6 +128,8 @@ export function OrchestratorPage({
   const isHierarchy = /\/orchestrator\/hierarchy\/?$/.test(pathname);
   const snap = useOrchestratorPreview();
   const [loading, setLoading] = useState(true);
+  const [building, setBuilding] = useState(false);
+  useEffect(() => { setBuilding(false); }, [pathname, state]);
   useEffect(() => { const id = window.setTimeout(() => setLoading(false), 450); return () => window.clearTimeout(id); }, []);
   useEffect(() => {
     orchestratorPreview.bindSampleOriginWorkspace(discussion?.workspaces[0]?.id);
@@ -300,14 +303,25 @@ export function OrchestratorPage({
     <section data-orchestrator-page aria-label={t("orchestrator.title")} className="h-full min-h-0 overflow-y-auto">
       <div className={`mx-auto flex w-full ${isHierarchy ? "max-w-300" : "max-w-198"} flex-col gap-5 px-4 pb-12 pt-12 lg:pt-32`}>
         {heading}
-        {nav}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          {nav}
+          {!isHierarchy && !building ? (
+            <div className="flex flex-wrap items-center gap-3">
+              <Button variant="secondary" size="sm" disabled={locked} onClick={() => setBuilding(true)} data-testid="button-new-agent">
+                {locked ? <LockIcon className="size-4" aria-hidden="true" /> : null}
+                {t("orchestrator.builder.new_agent")}
+              </Button>
+              {locked ? <span className="text-xs text-muted-foreground">{t("orchestrator.builder.locked_reason")}</span> : null}
+            </div>
+          ) : null}
+        </div>
         {locked && !isHierarchy ? (
           <p className="flex items-center gap-2 text-sm text-muted-foreground" role="status">
             <LockIcon className="size-4 shrink-0" aria-hidden="true" />
             <span>{t("orchestrator.locked_line")} · {t("orchestrator.locked_ask")}</span>
           </p>
         ) : null}
-        {body}
+        {building && !locked && !isHierarchy ? <AgentBuilder onClose={() => setBuilding(false)} /> : body}
       </div>
     </section>
   );

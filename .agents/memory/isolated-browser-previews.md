@@ -8,3 +8,9 @@ An isolated browser harness must import each dependency through its own exact ve
 **Why:** Browser module identity includes the query string. Importing React Router without Vite's dependency-version query creates a separate context from the page's router hooks, producing a false missing-router error even when a provider is present. Incremental optimization can give React, React DOM, and React Router different hashes; using the router's hash for all three produces stale-dependency 504 responses.
 
 **How to apply:** When checking a protected component in browser-intercepted test HTML, obtain each dependency URL independently from the running server's transformed component and entry module. Respect Vite's React-refresh initialization and CommonJS export shape. Keep the harness isolated from production routing and never weaken authentication to expose a preview.
+
+Base UI control identity can differ from native HTML: a Switch's supplied id belongs to its hidden native input, not the visible switch.
+
+**Why:** Clicking that id in a browser test repeatedly targeted an off-screen hidden input although the visible, accessible control worked.
+
+**How to apply:** Exercise switches through their accessible role and label. Check validation attributes on the visible control rather than assuming a supplied id identifies the interactive element.
