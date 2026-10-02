@@ -1,0 +1,19 @@
+{
+  "id": "tsk_review_r1",
+  "contextId": "ctx_r1",
+  "status": {
+    "state": "TASK_STATE_INPUT_REQUIRED",
+    "message": {
+      "messageId": "msg_q1",
+      "contextId": "ctx_r1",
+      "taskId": "tsk_review_r1",
+      "role": "ROLE_AGENT",
+      "parts": [
+        {
+          "text": "Which version of the reply rubric should I use for this review?"
+        }
+      ]
+    },
+    "timestamp": "2026-10-01T09:12:41.000Z"
+  }
+}

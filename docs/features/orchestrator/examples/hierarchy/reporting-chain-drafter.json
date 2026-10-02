@@ -1,0 +1,26 @@
+{
+  "chain": [
+    {
+      "id": "agt_01j9z8q2k4m4",
+      "slug": "drafter",
+      "displayName": "Drafter",
+      "roleKind": "worker",
+      "state": "active"
+    },
+    {
+      "id": "agt_01j9z8q2k4m3",
+      "slug": "reviewer",
+      "displayName": "Reviewer",
+      "roleKind": "reviewer",
+      "state": "active"
+    },
+    {
+      "id": "agt_01j9z8q2k4m0",
+      "slug": "coordinator",
+      "displayName": "Operations coordinator",
+      "roleKind": "manager",
+      "state": "active"
+    }
+  ],
+  "cycle": false
+}

@@ -1,0 +1,51 @@
+[
+  {
+    "id": "agt_01j9z8q2k4m0",
+    "slug": "coordinator",
+    "displayName": "Operations coordinator",
+    "roleKind": "manager",
+    "state": "active"
+  },
+  {
+    "id": "agt_01j9z8q2k4m1",
+    "slug": "intake",
+    "displayName": "Intake",
+    "roleKind": "dispatcher",
+    "state": "active"
+  },
+  {
+    "id": "agt_01j9z8q2k4m2",
+    "slug": "research",
+    "displayName": "Research",
+    "roleKind": "worker",
+    "state": "active"
+  },
+  {
+    "id": "agt_01j9z8q2k4m3",
+    "slug": "reviewer",
+    "displayName": "Reviewer",
+    "roleKind": "reviewer",
+    "state": "active"
+  },
+  {
+    "id": "agt_01j9z8q2k4m4",
+    "slug": "drafter",
+    "displayName": "Drafter",
+    "roleKind": "worker",
+    "state": "active"
+  },
+  {
+    "id": "agt_01j9z8q2k4m5",
+    "slug": "sender",
+    "displayName": "Sender",
+    "roleKind": "executor",
+    "state": "active"
+  },
+  {
+    "id": "agt_01j9z8q2k4m6",
+    "slug": "digest",
+    "displayName": "Daily digest",
+    "roleKind": "monitor",
+    "state": "active"
+  }
+]

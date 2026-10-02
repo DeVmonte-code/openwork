@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "identity": {"slug": "reviewer", "displayName": "Reviewer", "labels": ["sample"]},
+  "role": {
+    "kind": "reviewer",
+    "responsibilities": [
+      "Check the draft against the reply rubric",
+      "Send it to the sender or back to the drafter with specific fixes"
+    ],
+    "accepts": [{"type": "reply.review.requested"}],
+    "produces": ["reply.send.requested", "reply.draft.requested"]
+  },
+  "instructions": {
+    "system": "Check the draft against the rubric in the playbooks. If it passes, request sending. If not, return it to the drafter with a short list of fixes. If a delegation is refused, ask a person how to proceed."
+  },
+  "model": {
+    "primary": {"providerId": "example-provider", "modelId": "example-model"}
+  },
+  "runtime": {"target": "headless", "mode": "event"},
+  "triggers": [{"kind": "task", "taskTypes": ["reply.review.requested"]}],
+  "tools": {
+    "allow": [{"capability": "kb.search"}],
+    "orchestrator": ["report_status", "ask_clarification", "delegate_task", "memory_read"]
+  },
+  "a2a": {
+    "exposure": "internal",
+    "skills": [
+      {
+        "id": "review-reply",
+        "name": "Review a reply",
+        "description": "Checks a draft against the reply rubric and either passes it on or returns it with specific fixes.",
+        "tags": ["review", "quality"],
+        "examples": ["Review the draft for request r1 against the rubric"],
+        "taskType": "reply.review.requested"
+      }
+    ]
+  },
+  "permissions": {"inputTrust": "trusted", "delegateTo": ["sender", "drafter"]},
+  "memory": {"read": ["task", "org"], "write": ["task"], "orgNamespaces": ["playbooks"]},
+  "limits": {
+    "cost": {
+      "perAttemptMicroUsd": 150000,
+      "perTaskMicroUsd": 300000,
+      "perDayMicroUsd": 3000000,
+      "perMonthMicroUsd": 30000000
+    }
+  }
+}

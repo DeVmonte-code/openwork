@@ -1,0 +1,33 @@
+{
+  "tenant": "reviewer",
+  "message": {
+    "messageId": "dlg_drafter_9f2c1a",
+    "contextId": "ctx_r1",
+    "role": "ROLE_USER",
+    "referenceTaskIds": [
+      "tsk_draft_r1"
+    ],
+    "parts": [
+      {
+        "text": "Review the draft for request r1 against the reply rubric."
+      },
+      {
+        "data": {
+          "requestId": "r1",
+          "draftRef": "ws://drafts/r1.md"
+        },
+        "mediaType": "application/json"
+      }
+    ],
+    "metadata": {
+      "https://openwork.example/a2a/extensions/process/v1": {
+        "skillId": "review-reply",
+        "hop": 2,
+        "taint": true
+      }
+    }
+  },
+  "configuration": {
+    "returnImmediately": true
+  }
+}

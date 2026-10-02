@@ -1,0 +1,132 @@
+[
+  {
+    "manager": {
+      "id": "agt_01j9z8q2k4m0",
+      "slug": "coordinator",
+      "displayName": "Operations coordinator",
+      "roleKind": "manager",
+      "state": "active"
+    },
+    "level": 0,
+    "span": 5,
+    "limit": 7,
+    "overLimit": false,
+    "indirectReportCount": 1,
+    "directReports": [
+      {
+        "agent": {
+          "id": "agt_01j9z8q2k4m6",
+          "slug": "digest",
+          "displayName": "Daily digest",
+          "roleKind": "monitor",
+          "state": "active"
+        },
+        "relationshipType": "direct",
+        "controlDegree": 1,
+        "controlName": "Very low",
+        "dependencyDegree": 1,
+        "dependencyName": "Very low",
+        "countsTowardSpan": true
+      },
+      {
+        "agent": {
+          "id": "agt_01j9z8q2k4m1",
+          "slug": "intake",
+          "displayName": "Intake",
+          "roleKind": "dispatcher",
+          "state": "active"
+        },
+        "relationshipType": "direct",
+        "controlDegree": 2,
+        "controlName": "Low",
+        "dependencyDegree": 1,
+        "dependencyName": "Very low",
+        "countsTowardSpan": true
+      },
+      {
+        "agent": {
+          "id": "agt_01j9z8q2k4m2",
+          "slug": "research",
+          "displayName": "Research",
+          "roleKind": "worker",
+          "state": "active"
+        },
+        "relationshipType": "direct",
+        "controlDegree": 3,
+        "controlName": "Moderate",
+        "dependencyDegree": 3,
+        "dependencyName": "Moderate",
+        "countsTowardSpan": true
+      },
+      {
+        "agent": {
+          "id": "agt_01j9z8q2k4m3",
+          "slug": "reviewer",
+          "displayName": "Reviewer",
+          "roleKind": "reviewer",
+          "state": "active"
+        },
+        "relationshipType": "direct",
+        "controlDegree": 4,
+        "controlName": "High",
+        "dependencyDegree": 3,
+        "dependencyName": "Moderate",
+        "countsTowardSpan": true
+      },
+      {
+        "agent": {
+          "id": "agt_01j9z8q2k4m5",
+          "slug": "sender",
+          "displayName": "Sender",
+          "roleKind": "executor",
+          "state": "active"
+        },
+        "relationshipType": "direct",
+        "controlDegree": 4,
+        "controlName": "High",
+        "dependencyDegree": 4,
+        "dependencyName": "High",
+        "countsTowardSpan": true
+      }
+    ],
+    "workload": {
+      "queued": 4,
+      "running": 2
+    }
+  },
+  {
+    "manager": {
+      "id": "agt_01j9z8q2k4m3",
+      "slug": "reviewer",
+      "displayName": "Reviewer",
+      "roleKind": "reviewer",
+      "state": "active"
+    },
+    "level": 1,
+    "span": 1,
+    "limit": 7,
+    "overLimit": false,
+    "indirectReportCount": 0,
+    "directReports": [
+      {
+        "agent": {
+          "id": "agt_01j9z8q2k4m4",
+          "slug": "drafter",
+          "displayName": "Drafter",
+          "roleKind": "worker",
+          "state": "active"
+        },
+        "relationshipType": "direct",
+        "controlDegree": 4,
+        "controlName": "High",
+        "dependencyDegree": 4,
+        "dependencyName": "High",
+        "countsTowardSpan": true
+      }
+    ],
+    "workload": {
+      "queued": 0,
+      "running": 0
+    }
+  }
+]

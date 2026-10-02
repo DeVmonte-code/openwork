@@ -1,0 +1,33 @@
+{
+  "id": "tsk_send_r1",
+  "contextId": "ctx_r1",
+  "status": {
+    "state": "TASK_STATE_COMPLETED",
+    "timestamp": "2026-10-01T09:31:52.000Z"
+  },
+  "artifacts": [
+    {
+      "artifactId": "art_sent_r1",
+      "name": "Sent reply",
+      "description": "The reply that was sent, and when.",
+      "parts": [
+        {
+          "text": "Reply sent to the requester for r1."
+        },
+        {
+          "data": {
+            "requestId": "r1",
+            "sentAt": "2026-10-01T09:31:50.000Z",
+            "deliveries": 1
+          },
+          "mediaType": "application/json"
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "https://openwork.example/a2a/extensions/budget/v1": {
+      "spentMicroUsd": 18200
+    }
+  }
+}

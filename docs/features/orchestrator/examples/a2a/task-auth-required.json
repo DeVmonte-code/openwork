@@ -1,0 +1,36 @@
+{
+  "id": "tsk_send_r1",
+  "contextId": "ctx_r1",
+  "status": {
+    "state": "TASK_STATE_AUTH_REQUIRED",
+    "message": {
+      "messageId": "msg_apr1",
+      "contextId": "ctx_r1",
+      "taskId": "tsk_send_r1",
+      "role": "ROLE_AGENT",
+      "parts": [
+        {
+          "text": "Waiting for a person to approve: Send reply to 1 recipient."
+        },
+        {
+          "data": {
+            "approvalId": "apr_01j9z8q2k4mc",
+            "action": "Send reply to 1 recipient",
+            "data": "The drafted reply and the original request's sender address",
+            "risk": "The recipient sees it right away. It cannot be unsent.",
+            "reversible": false,
+            "expiresAt": "2026-10-02T09:14:00.000Z",
+            "reviewUrl": "https://den.example.com/orchestrator/tasks/tsk_send_r1"
+          },
+          "mediaType": "application/json",
+          "metadata": {
+            "https://openwork.example/a2a/extensions/approval/v1": {
+              "version": 1
+            }
+          }
+        }
+      ]
+    },
+    "timestamp": "2026-10-01T09:14:00.000Z"
+  }
+}

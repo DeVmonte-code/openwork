@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "identity": {"slug": "research", "displayName": "Research", "description": "Gather the facts needed to answer one request", "labels": ["sample"]},
+  "role": {
+    "kind": "worker",
+    "responsibilities": ["Gather the facts needed to answer one request"],
+    "accepts": [{"type": "research.requested"}],
+    "produces": ["reply.draft.requested"]
+  },
+  "instructions": {
+    "system": "Read the request, search the knowledge base and the playbooks, and hand a short list of cited facts to the drafter.",
+    "skills": [{"skillId": "cite-sources", "source": "organization", "contentDigest": "78421bfd8fc19c565460c6a6b2be6a4b80e5a63e381b497d827cd38aeca89cc9", "enabled": true}]
+  },
+  "model": {
+    "primary": {"providerId": "example-provider", "modelId": "example-model"}
+  },
+  "runtime": {"target": "headless", "mode": "event", "concurrency": 2},
+  "triggers": [{"kind": "task", "taskTypes": ["research.requested"]}],
+  "tools": {
+    "allow": [
+      {"capability": "inbox.get"},
+      {"capability": "kb.search"}
+    ],
+    "orchestrator": ["report_status", "ask_clarification", "delegate_task", "memory_read"]
+  },
+  "a2a": {
+    "exposure": "members",
+    "skills": [
+      {
+        "id": "research-request",
+        "name": "Research a request",
+        "description": "Gathers the facts needed to answer one inbound request and returns cited findings.",
+        "tags": ["research", "support"],
+        "examples": ["Find what we know about request r1 and cite the playbook entries you used"],
+        "taskType": "research.requested"
+      }
+    ]
+  },
+  "permissions": {"inputTrust": "untrusted", "delegateTo": ["drafter"]},
+  "memory": {"read": ["task", "org"], "write": ["task"], "orgNamespaces": ["playbooks"]},
+  "limits": {
+    "cost": {
+      "perAttemptMicroUsd": 200000,
+      "perTaskMicroUsd": 400000,
+      "perDayMicroUsd": 5000000,
+      "perMonthMicroUsd": 50000000
+    }
+  }
+}

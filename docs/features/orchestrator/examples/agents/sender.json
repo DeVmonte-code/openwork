@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "identity": {"slug": "sender", "displayName": "Sender", "labels": ["sample"]},
+  "role": {
+    "kind": "executor",
+    "responsibilities": ["Send one approved reply", "Confirm it was sent exactly once"],
+    "accepts": [{"type": "reply.send.requested"}]
+  },
+  "instructions": {
+    "system": "Send the approved draft as a reply to the original request. Before sending, check whether this reply was already sent. Do nothing else."
+  },
+  "model": {
+    "primary": {"providerId": "example-provider", "modelId": "example-model"}
+  },
+  "runtime": {"target": "headless", "mode": "event"},
+  "triggers": [{"kind": "task", "taskTypes": ["reply.send.requested"]}],
+  "tools": {
+    "allow": [
+      {"capability": "mail.find_sent"},
+      {"capability": "mail.send_reply", "tier": "external_write"}
+    ],
+    "orchestrator": ["report_status", "request_approval"]
+  },
+  "a2a": {
+    "exposure": "internal",
+    "skills": [
+      {
+        "id": "send-reply",
+        "name": "Send an approved reply",
+        "description": "Sends one reply after a person approves it, and confirms it went out exactly once.",
+        "tags": ["send", "approval-required"],
+        "examples": ["Send the approved reply for request r1"],
+        "taskType": "reply.send.requested"
+      }
+    ]
+  },
+  "permissions": {
+    "inputTrust": "trusted",
+    "approvals": {
+      "requireFrom": "external_write",
+      "approvers": {"roles": ["owner", "super-admin"], "minApprovals": 1},
+      "expiresInMs": 86400000,
+      "allowSelfApproval": false
+    }
+  },
+  "limits": {
+    "cost": {
+      "perAttemptMicroUsd": 50000,
+      "perTaskMicroUsd": 100000,
+      "perDayMicroUsd": 1000000,
+      "perMonthMicroUsd": 10000000
+    }
+  },
+  "escalation": [
+    {
+      "when": {"kind": "approval_waiting", "afterMs": 14400000},
+      "then": [{
+        "action": "notify",
+        "to": {"roles": ["owner", "super-admin"]}
+      }]
+    }
+  ]
+}

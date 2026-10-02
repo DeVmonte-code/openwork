@@ -1,0 +1,113 @@
+[
+  {
+    "id": "rel_01j9z8r2k4a1",
+    "managerAgentId": "agt_01j9z8q2k4m0",
+    "reportingAgentId": "agt_01j9z8q2k4m1",
+    "relationshipType": "direct",
+    "controlDegree": 2,
+    "dependencyDegree": 1,
+    "escalation": {
+      "requiredFromLevel": 5,
+      "alsoWhen": [
+        "policy_conflict"
+      ]
+    },
+    "state": "active",
+    "startedAt": "2026-10-01T08:00:00.000Z",
+    "endedAt": null,
+    "revision": 1
+  },
+  {
+    "id": "rel_01j9z8r2k4a2",
+    "managerAgentId": "agt_01j9z8q2k4m0",
+    "reportingAgentId": "agt_01j9z8q2k4m2",
+    "relationshipType": "direct",
+    "controlDegree": 3,
+    "dependencyDegree": 3,
+    "escalation": {
+      "requiredFromLevel": 4,
+      "alsoWhen": [
+        "repeated_failure",
+        "blocked"
+      ]
+    },
+    "state": "active",
+    "startedAt": "2026-10-01T08:00:00.000Z",
+    "endedAt": null,
+    "revision": 1
+  },
+  {
+    "id": "rel_01j9z8r2k4a3",
+    "managerAgentId": "agt_01j9z8q2k4m0",
+    "reportingAgentId": "agt_01j9z8q2k4m3",
+    "relationshipType": "direct",
+    "controlDegree": 4,
+    "dependencyDegree": 3,
+    "escalation": {
+      "requiredFromLevel": 3,
+      "alsoWhen": [
+        "repeated_failure",
+        "policy_conflict",
+        "deadline_at_risk"
+      ]
+    },
+    "state": "active",
+    "startedAt": "2026-10-01T08:00:00.000Z",
+    "endedAt": null,
+    "revision": 1
+  },
+  {
+    "id": "rel_01j9z8r2k4a4",
+    "managerAgentId": "agt_01j9z8q2k4m0",
+    "reportingAgentId": "agt_01j9z8q2k4m5",
+    "relationshipType": "direct",
+    "controlDegree": 4,
+    "dependencyDegree": 4,
+    "escalation": {
+      "requiredFromLevel": 2,
+      "alsoWhen": [
+        "policy_conflict",
+        "budget_at_risk"
+      ]
+    },
+    "state": "active",
+    "startedAt": "2026-10-01T08:00:00.000Z",
+    "endedAt": null,
+    "revision": 1
+  },
+  {
+    "id": "rel_01j9z8r2k4a5",
+    "managerAgentId": "agt_01j9z8q2k4m0",
+    "reportingAgentId": "agt_01j9z8q2k4m6",
+    "relationshipType": "direct",
+    "controlDegree": 1,
+    "dependencyDegree": 1,
+    "escalation": {
+      "requiredFromLevel": 5,
+      "alsoWhen": []
+    },
+    "state": "active",
+    "startedAt": "2026-10-01T08:00:00.000Z",
+    "endedAt": null,
+    "revision": 1
+  },
+  {
+    "id": "rel_01j9z8r2k4a6",
+    "managerAgentId": "agt_01j9z8q2k4m3",
+    "reportingAgentId": "agt_01j9z8q2k4m4",
+    "relationshipType": "direct",
+    "controlDegree": 4,
+    "dependencyDegree": 4,
+    "escalation": {
+      "requiredFromLevel": 3,
+      "alsoWhen": [
+        "repeated_failure",
+        "blocked"
+      ]
+    },
+    "state": "active",
+    "startedAt": "2026-10-01T08:00:00.000Z",
+    "endedAt": null,
+    "revision": 1
+  }
+]

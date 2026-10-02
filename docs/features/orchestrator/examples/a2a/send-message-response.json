@@ -1,0 +1,10 @@
+{
+  "task": {
+    "id": "tsk_review_r1",
+    "contextId": "ctx_r1",
+    "status": {
+      "state": "TASK_STATE_SUBMITTED",
+      "timestamp": "2026-10-01T09:12:03.000Z"
+    }
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "identity": {"slug": "drafter", "displayName": "Drafter", "labels": ["sample"]},
+  "role": {
+    "kind": "worker",
+    "responsibilities": ["Write a reply from the researched facts", "Revise the reply when the reviewer asks"],
+    "accepts": [{"type": "reply.draft.requested"}],
+    "produces": ["reply.review.requested"]
+  },
+  "instructions": {
+    "system": "Write a clear, polite reply that uses only the facts you were given. Save it as a draft in the workspace and ask for review."
+  },
+  "model": {
+    "primary": {"providerId": "example-provider", "modelId": "example-model"}
+  },
+  "runtime": {"target": "headless", "mode": "event"},
+  "triggers": [{"kind": "task", "taskTypes": ["reply.draft.requested"]}],
+  "tools": {
+    "allow": [{"capability": "workspace.write_draft"}],
+    "orchestrator": ["report_status", "ask_clarification", "delegate_task"]
+  },
+  "a2a": {
+    "exposure": "internal",
+    "skills": [
+      {
+        "id": "draft-reply",
+        "name": "Draft a reply",
+        "description": "Writes a clear, polite reply from researched facts and saves it as a draft.",
+        "tags": ["writing", "support"],
+        "examples": ["Draft a reply to request r1 using these three facts"],
+        "taskType": "reply.draft.requested"
+      }
+    ]
+  },
+  "permissions": {"inputTrust": "trusted", "delegateTo": ["reviewer"]},
+  "limits": {
+    "maxVisitsPerProcess": 3,
+    "cost": {
+      "perAttemptMicroUsd": 200000,
+      "perTaskMicroUsd": 600000,
+      "perDayMicroUsd": 5000000,
+      "perMonthMicroUsd": 50000000
+    }
+  }
+}

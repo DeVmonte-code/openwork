@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "identity": {"slug": "digest", "displayName": "Daily digest", "labels": ["sample"]},
+  "role": {"kind": "monitor", "responsibilities": ["Summarise yesterday's processes and anything stuck"]},
+  "instructions": {
+    "system": "Inspect the queue, summarise what finished, what is waiting on a person, and what is stuck. Send the summary to the owners."
+  },
+  "model": {
+    "primary": {"providerId": "example-provider", "modelId": "example-model"}
+  },
+  "runtime": {"target": "headless", "mode": "schedule"},
+  "frequency": {
+    "schedule": {"kind": "daily", "timezone": "UTC", "hour": 8, "minute": 0}
+  },
+  "tools": {"orchestrator": ["inspect_queue", "notify"]},
+  "permissions": {"inputTrust": "trusted"},
+  "limits": {
+    "cost": {
+      "perAttemptMicroUsd": 100000,
+      "perTaskMicroUsd": 100000,
+      "perDayMicroUsd": 200000,
+      "perMonthMicroUsd": 6000000
+    }
+  }
+}
